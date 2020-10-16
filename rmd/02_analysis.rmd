@@ -1,0 +1,242 @@
+---
+title: "[Add study name]"
+author: ""
+date: "Last updated on `r Sys.Date()`"
+output:
+  html_document:
+    theme: paper
+    highlight: kate
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+
+<style>
+.list-group-item.active, .list-group-item.active:hover, .list-group-item.active:focus {
+  background-color: #00d188;
+  border-color: #00d188;
+}
+
+body {
+  font-family: montserrat;
+  color: #444444;
+  font-size: 14px;
+}
+
+h1 {
+  font-weight: bold;
+  font-size: 28px;
+}
+
+h1.title {
+  font-size: 30px;
+  color: #00d188;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+h3 {
+  font-size: 18px;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.showtext = TRUE, dpi = 700)
+
+knitr::knit_hooks$set(inline = function(x) {
+  prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
+})
+
+Sys.setlocale("LC_TIME", "C")
+extrafont::loadfonts(device = "win")
+```
+
+
+
+```{r prep}
+## packages: remove or add your necessary packages
+
+required_packages <- c("tidyverse", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext")
+
+for(i in required_packages) { 
+if(!require(i, character.only = T)) {
+
+  #  if package is not existing, install then load the package
+install.packages(i, dependencies = T)
+require(i, character.only = T)
+}
+}
+
+
+## save plots?
+save <- TRUE
+#save <- FALSE
+
+## quality of png's
+dpi <- 750
+
+## font adjust; please adjust to client´s website
+#extrafont::loadfonts(device = "win", quiet = TRUE)
+#font_add_google("Montserrat", "Montserrat")
+# font_add_google("Overpass", "Overpass")
+# font_add_google("Overpass Mono", "Overpass Mono")
+
+
+
+## theme updates; please adjust to client´s website
+#theme_set(ggthemes::theme_clean(base_size = 15))
+theme_set(ggthemes::theme_clean(base_size = 15, base_family = "Montserrat"))
+
+
+theme_update(plot.margin = margin(30, 30, 30, 30),
+             plot.background = element_rect(color = "white",
+                                            fill = "white"),
+             plot.title = element_text(size = 20,
+                                       face = "bold",
+                                       lineheight = 1.05,
+                                       hjust = .5,
+                                       margin = margin(10, 0, 25, 0)),
+             plot.title.position = "plot",
+             plot.caption = element_text(color = "grey40",
+                                         size = 9,
+                                         margin = margin(20, 0, -20, 0)),
+             plot.caption.position = "plot",
+             axis.line.x = element_line(color = "black",
+                                        size = .8),
+             axis.line.y = element_line(color = "black",
+                                        size = .8),
+             axis.title.x = element_text(size = 16,
+                                         face = "bold",
+                                         margin = margin(t = 20)),
+             axis.title.y = element_text(size = 16,
+                                         face = "bold",
+                                         margin = margin(r = 20)),
+             axis.text = element_text(size = 11,
+                                      color = "black",
+                                      face = "bold"),
+             axis.text.x = element_text(margin = margin(t = 10)),
+             axis.text.y = element_text(margin = margin(r = 10)),
+             axis.ticks = element_blank(),
+             panel.grid.major.x = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.major.y = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.minor.x = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.minor.y = element_blank(),
+             panel.spacing.x = unit(4, "lines"),
+             panel.spacing.y = unit(2, "lines"),
+             legend.position = "top",
+             legend.title = element_text(family = "Montserrat",
+                                         color = "black",
+                                         size = 14,
+                                         margin = margin(5, 0, 5, 0)),
+             legend.text = element_text(family = "Montserrat",
+                                        color = "black",
+                                        size = 11,
+                                        margin = margin(4.5, 4.5, 4.5, 4.5)),
+             legend.background = element_rect(fill = NA,
+                                              color = NA),
+             legend.key = element_rect(color = NA, fill = NA),
+             #legend.key.width = unit(5, "lines"),
+             #legend.spacing.x = unit(.05, "pt"),
+             #legend.spacing.y = unit(.55, "pt"),
+             #legend.margin = margin(0, 0, 10, 0),
+             strip.text = element_text(face = "bold",
+                                       margin = margin(b = 10)))
+
+## theme settings for flipped plots
+theme_flip <-
+  theme(panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_line(size = .6,
+                                          color = "#eaeaea"))
+
+## theme settings for maps
+theme_map <- 
+  theme_void(base_family = "Montserrat") +
+  theme(legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.margin = margin(10, 10, 10, 10),
+        legend.title = element_text(size = 17, 
+                                    face = "bold"),
+        legend.text = element_text(color = "grey33",
+                                   size = 12),
+        plot.margin = margin(15, 5, 15, 5),
+        plot.title = element_text(face = "bold",
+                                  size = 20,
+                                  hjust = .5,
+                                  margin = margin(30, 0, 10, 0)),
+        plot.subtitle = element_text(face = "bold",
+                                     color = "grey33",
+                                     size = 17,
+                                     hjust = .5,
+                                     margin = margin(10, 0, -30, 0)),
+        plot.caption = element_text(size = 14,
+                                    color = "grey33",
+                                    hjust = .97,
+                                    margin = margin(-30, 0, 0, 0)))
+
+## numeric format for labels
+num_format <- scales::format_format(big.mark = ",", small.mark = ",", scientific = F)
+
+## main color backlinko
+bl_col <- "#00d188"
+bl_dark <- darken(bl_col, .3, space = "HLS")
+
+## colors + labels for interval stripes
+int_cols <- c("#bce2d5", "#79d8b6", bl_col, "#009f66", "#006c45", "#003925")
+int_perc <- c("100%", "95%", "75%", "50%", "25%", "5%")
+
+## colors for degrees (Bachelors, Massters, Doctorate in reverse order)
+cols_degree <- c("#e64500", "#FFCC00", darken(bl_col, .1))
+
+## gradient colors for position
+colfunc <- colorRampPalette(c(bl_col, "#bce2d5"))
+pos_cols <- colfunc(10)
+```
+
+# load data
+
+
+
+```{r}
+
+# 1 saving plots in pdf with example
+
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color= drv)) + 
+     geom_smooth(mapping = aes(linetype = drv), method = 'loess') +
+     geom_point()
+
+if(save == T){ 
+  ggsave(here::here("plots", "name_plot.pdf"), name_plot, 
+         width = 12.5, height = 8, device = cairo_pdf)
+}
+```
+
+
+```{r convert_to_pngs, results='asis', echo=FALSE}
+# 2 convert pdfs into pngs; to be added at the end of the rmd file
+  if(save == T) {
+    pdfs <- list.files(here::here("plots"), pattern = "*.pdf")
+    
+    setwd(here::here("plots", "png"))
+    for(pdf in pdfs) {
+      pdf_convert(pdf = here::here("plots", pdf), format = "png", dpi = 720)
+    }
+  }
+
+```  
+
+
+
+

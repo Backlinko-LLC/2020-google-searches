@@ -1,0 +1,96 @@
+---
+title: "[Study name]"
+author: ""
+date: "Last update: `r Sys.Date()`"
+output:
+  html_document:
+    theme: paper
+    highlight: kate
+    code_folding: hide
+    toc_depth: 3
+    toc_float: true
+editor_options:
+  chunk_output_type: console
+---
+
+
+<style>
+.list-group-item.active, .list-group-item.active:hover, .list-group-item.active:focus {
+  background-color: #00d188;
+  border-color: #00d188;
+}
+
+body {
+  font-family: montserrat;
+  color: #444444;
+  font-size: 14px;
+}
+
+h1 {
+  font-weight: bold;
+  font-size: 28px;
+}
+
+h1.title {
+  font-size: 30px;
+  color: #00d188;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+h3 {
+  font-size: 18px;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.showtext = TRUE)
+knitr::knit_hooks$set(inline = function(x) {
+  prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
+})
+plots <- readRDS(here::here("proc_data/plots.RDS"))
+include_png <- function(item) {
+  knitr::include_graphics(
+    here::here("plots", "png", paste0(make.names(item), ".png")))
+  } 
+```
+
+# 1 Introduction 
+filled out by Daniel
+
+# 2 Methodology
+partly filled out by Daniel;
+
+##### Step 1 xxxx
+
+##### Step 2 Data Mining
+
+##### Step 3 Data Enrichment
+
+##### Step 4 Data Analysis
+should be filled out by you; here explanation about which models have been used etc. 
+
+#### Overview of the data
+here basic overview of the data set (missing values, number of observations, number of variables, etc.). Plots/tables can be used for that purpose
+
+# 3 Research Findings 
+
+# X Annex
+
+
+
+```{r name_plot, echo=FALSE}
+  knitr::include_graphics(here::here("plots", "png", "name_example.png"))
+```
+
+```{r name_table, echo=FALSE}
+  title_description_table <- read.csv(here::here("plots", "csv", "name_example_table.csv"), stringsAsFactors=F)
+knitr::kable(title_description_table, caption = "Basic information about XXX")
+```
+
+
+
+
