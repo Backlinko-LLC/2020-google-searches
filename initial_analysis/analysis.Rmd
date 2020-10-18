@@ -1,0 +1,373 @@
+---
+title: "Keyword analysis"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = T, warning = F, message = F, fig.path = "plots/")
+
+```
+
+
+### Load data
+
+```{r}
+library(pacman)
+p_load(dplyr, magrittr, tidyverse, DBI, bigrquery, feather, pander, vroom, glue, janitor, gt)
+#pq_auth() in console
+```
+
+<br>
+
+I will load two random samples of one millions rows from US. These will be used to make some of the analyses easier and faster than by SQL. We can confirm that the analysis is stable if both random samples give essentially the same result.
+
+Ultimately, this code could be rewritten in SQL (or maybe dbplyr).
+
+<br>
+
+```{r}
+con <- dbConnect(
+  bigrquery::bigquery(),
+  project = "dataforseo-bigquery",
+  billing = "dataforseo-bigquery"
+)
+
+tbl1 <- tbl(con, "dataforseo-bigquery.dataforseo_data.keyword_data")
+
+
+write_keyword_files <- function(n, n_files){
+  sql <- glue("SELECT * FROM `dataforseo-bigquery.dataforseo_data.keyword_data` 
+          WHERE location = 2840 
+          ORDER BY RAND()
+          LIMIT {n}")
+  tb <- bq_project_query("dataforseo-bigquery", sql)
+  df <- bq_table_download(tb, max_results = as.numeric(n)) %>% 
+    mutate(g = (row_number() -1) %/% (n() / n_files))
+  
+  for (i in 0:(n_files-1)){
+    write_csv(df %>% filter(g == i), glue("samples/{i}.csv"))
+  }  
+}
+
+write_top1m <- function(){
+  sql <- glue("SELECT * FROM `dataforseo-bigquery.dataforseo_data.keyword_data` 
+            WHERE location = 2840 
+            ORDER BY keyword_info_search_volume DESC
+            LIMIT 1000000")
+  tb <- bq_project_query("dataforseo-bigquery", sql)
+  df <- bq_table_download(tb, max_results = 1000000)
+  write_csv(df, "samples/top1m.csv")
+}
+
+#write_keyword_files("2000000", 2)
+#write_top1m()
+s1 <- vroom("samples/0.csv")
+s2 <- vroom("samples/1.csv")
+top1m <- vroom("samples/top1m.csv")
+s1b <- s1 %>% filter(keyword_info_search_volume < 14800)
+```
+
+<br>
+
+### Total number or rows
+
+```{sql, connection = con, output.var = "sql"}
+SELECT COUNT(keyword_info_search_volume) as `total_count`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE `location` = 2840
+```
+
+```{r}
+total_count <- sql$total_count
+total_count
+```
+<br>
+<br>
+
+```{sql, connection = con, output.var = "sql"}
+SELECT COUNT(keyword_info_search_volume) as `total_count_nona`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE `location` = 2840
+AND keyword_info_search_volume IS NOT NULL
+```
+
+```{r}
+total_count_nona <- sql$total_count_nona
+total_count_nona
+```
+
+
+<br>
+
+### Total number of searches
+
+(Calculated in a roundabout way to avoid integer overflow)
+
+```{sql, connection = con, output.var = "sql"}
+SELECT SUM(COALESCE(keyword_info_search_volume / 10000, 0)) AS total_volume
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE location = 2840
+```
+
+```{r}
+total_volume <- sql$total_volume * 10000
+total_volume
+```
+
+
+<br>
+
+### Top searches
+
+This table shows the top 30 searches. They are all spelling errors. As in, they are not really searched, but rather people attempting to go to Youtube or Facebook, but typing it wrong. Oddly they are all attributed as having a search volume of exactly 185 million. Note that the ones that have spell_type NA are also failed attempts to go on Youtube / Facebook, just unrecognized
+
+```{r}
+top1m %>% 
+  select(keyword, location, spell, spell_type, keyword_info_search_volume) %>% head(30)
+```
+
+<br>
+
+### Missing keyword_info_search_volume
+
+There are a few missing, and a lot of searches with 0 search volume.
+
+```{r}
+s1 %>% mutate(volume_group = case_when(is.na(keyword_info_search_volume) ~ "null",
+  keyword_info_search_volume == 0 ~ "zero",
+  keyword_info_search_volume > 0 ~ "above zero")) %>% 
+  tabyl(volume_group)
+```
+
+<br>
+
+The missing have some searches that are likely high volume, such as "lilo and stitch". Thus they are truly missing, and not just 0s.
+
+```{r}
+s1 %>% filter(is.na(keyword_info_search_volume)) %>% head(10) %>% 
+  select(keyword, keyword_info_search_volume)
+```
+
+
+<br>
+
+### Mean search volume
+
+
+```{sql, connection = con, output.var = "sql"}
+SELECT AVG(`keyword_info_search_volume`) AS `mean`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE `location` = 2840
+```
+
+```{r}
+sql$mean
+```
+
+<br>
+
+Confirm that we get the same from total_volume and total_count
+
+```{r}
+total_volume / total_count
+```
+
+<br>
+
+### Median search volume
+
+```{r}
+s1 %>% summarise(median = median(keyword_info_search_volume, na.rm = T))
+```
+
+<br>
+
+Cornfirm that we get the same in the second sample
+
+```{r}
+s2 %>% summarise(median = median(keyword_info_search_volume, na.rm = T))
+```
+
+<br>
+
+Extra confirmation that we get the same with the full data set
+
+```{sql, connection = con, output.var = "sql"}
+SELECT approx_quantiles(keyword_info_search_volume, 2)[offset(1)] AS `median`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE location = 2840
+```
+
+
+```{r}
+sql$median
+```
+
+<br>
+
+### Questions
+
+```{r questions}
+make_questions_plot <- function(df){
+  df %>% 
+    select(keyword) %>% 
+    mutate(
+      what = startsWith(keyword, "what "),
+      which = startsWith(keyword, "which "),
+      where = startsWith(keyword, "where "),
+      who = startsWith(keyword, "who "),
+      why = startsWith(keyword, "why "),
+      how = startsWith(keyword, "how ")
+    ) %>% 
+    summarise(across(-keyword, sum)) %>% 
+    pivot_longer(everything()) %>% 
+    mutate(value = value / 10**6) %>% 
+    ggplot(aes(x = name, y = value)) +
+    geom_bar(stat = "identity", fill = "turquoise4") +
+    scale_y_continuous(labels = scales::percent) +
+    theme_light()
+}
+
+make_questions_plot(s1)
+```
+
+<br>
+
+### Mean CPC
+
+
+```{sql, connection = con, output.var = "sql"}
+SELECT AVG(`keyword_info_cpc`) AS `mean_cpc`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE `location` = 2840
+```
+
+```{r}
+sql$mean_cpc
+```
+
+<br>
+
+### Median CPC
+
+```{r}
+s1 %>% summarise(median = median(keyword_info_cpc, na.rm = T))
+```
+
+
+<br>
+
+### Stopwords
+
+The proportion of searches that has at least one stopword by volume is calculated.
+
+A list of stopwords is acquired from the stopword package
+
+To calculate the total proportion of stopwords without loading the full data set, I create a composition of
+a) The top 1 million highest volume searches
+b) A random ~1 million searches that are not in the top 1 million
+
+The result for (b) is scaled so that the sum of the two represents the whole data set.
+
+```{r}
+add_stopwords <- function(df, outf){
+  df %>%
+    rowwise() %>% 
+    mutate(stopwords = sum((str_count(keyword, stopwords$word)))) %>% 
+    write_csv(outf)
+}
+
+stopwords <- tibble(word = stopwords::stopwords(language = "en")) %>% 
+  mutate(word = glue("\\b{word}\\b"))
+
+#add_stopwords(s1, "samples/0_stopwords.csv")
+#add_stopwords(top1m, "samples/top1m_stopwords.csv")
+
+s1s <- vroom("samples/0_stopwords.csv")
+top1ms <- vroom("samples/top1m_stopwords.csv")
+s1sb <- s1s %>% filter(keyword_info_search_volume < 14800)
+
+scale_factor <- total_count_nona / nrow(s1sb)
+
+stopwords <- bind_rows(
+  s1sb %>% mutate(stopword_searched = ifelse(stopwords > 0, keyword_info_search_volume, 0)) %>% 
+    summarise(total_searched_stopword = sum(stopword_searched, na.rm = T) * scale_factor,
+              total_searched = sum(keyword_info_search_volume, na.rm = T) * scale_factor,
+              among = "bottom"),
+                 
+  top1ms %>% mutate(stopword_searched = ifelse(stopwords > 0, keyword_info_search_volume, 0)) %>% 
+    summarise(total_searched_stopword = sum(stopword_searched, na.rm = T),
+              total_searched = sum(keyword_info_search_volume, na.rm = T),
+              among = "top")
+) %>% summarise(across(-among, sum))
+
+stopwords$total_searched_stopword / stopwords$total_searched
+```
+
+<br>
+
+### Proportion of spell types
+
+Only the top results have spell types:
+
+```{r}
+s1b %>% drop_na(spell_type)
+```
+
+<br>
+
+
+```{r}
+top1m %>% drop_na(spell_type) %$% sum(keyword_info_search_volume) / total_volume
+```
+
+
+So about half of all search volume has a spell type! This is an underestimate of all types, since many are not caught.
+
+The reason for this high number is, as we saw above, that most the biggest searches are not actual searches, but rather failed attempts to type the address of major sites.
+
+<br>
+
+### Long tail
+
+(To be expanded)
+
+```{r search_tails}
+volume_top <- top1m %>%  
+  add_rownames() %>% 
+  mutate(rowname = as.numeric(rowname)) %>% 
+  select(rowname, volume = keyword_info_search_volume)
+
+ggplot(volume_top %>% head(10000), aes(x = rowname, y = volume)) +
+  geom_line() +
+  theme_light()
+```
+
+<br>
+
+About half of all keywords have less than 10 searches:
+
+```{r}
+nrow(s1 %>% filter(keyword_info_search_volume < 10)) / nrow(s1 %>% drop_na(keyword_info_search_volume))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
