@@ -23,6 +23,8 @@ p_load(dplyr, magrittr, tidyverse, DBI, bigrquery, feather, pander, vroom, glue,
 
 I will load two random samples of one millions rows from US. These will be used to make some of the analyses easier and faster than by SQL. We can confirm that the analysis is stable if both random samples give essentially the same result.
 
+#!!!D: Just to clarify: Why do we not use a larger sample? 
+
 Ultimately, this code could be rewritten in SQL (or maybe dbplyr).
 
 <br>
@@ -47,7 +49,7 @@ write_keyword_files <- function(n, n_files){
     mutate(g = (row_number() -1) %/% (n() / n_files))
   
   for (i in 0:(n_files-1)){
-    write_csv(df %>% filter(g == i), glue("samples/{i}.csv"))
+    write_csv(df %>% filter(g == i), glue("samples/{i}.csv"))  #!!!Please store this in proc_data so others can reproduce. Please consult our processes if something is unclear. 
   }  
 }
 
@@ -306,9 +308,13 @@ stopwords <- bind_rows(
 stopwords$total_searched_stopword / stopwords$total_searched
 ```
 
+#!!!D: Can we get the most often used stopwords? e.g. top 10 or 15?
+
 <br>
 
 ### Proportion of spell types
+
+#!!!D: Please us the whole data set to determine 1) most often terms with mistakes e.g. top 15 (see "spell" column) and 2) share of spell types e.g. x% no spell, y% did_you_mean, z% showing_results_for etc. Should be fairly easy with SQL or dbplyr.  Show with plot. 
 
 Only the top results have spell types:
 
@@ -353,7 +359,7 @@ About half of all keywords have less than 10 searches:
 nrow(s1 %>% filter(keyword_info_search_volume < 10)) / nrow(s1 %>% drop_na(keyword_info_search_volume))
 ```
 
-
+#!!!D: Can you verify it with the whole data set? 
 
 
 
