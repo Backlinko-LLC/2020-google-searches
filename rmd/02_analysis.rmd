@@ -1,5 +1,5 @@
 ---
-title: "[Add study name]"
+title: "Keyword landscape analysis"
 author: ""
 date: "Last updated on `r Sys.Date()`"
 output:
@@ -48,7 +48,7 @@ h3 {
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.showtext = TRUE, dpi = 700)
+knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/", cache = T, fig.showtext = TRUE, dpi = 700)
 
 knitr::knit_hooks$set(inline = function(x) {
   prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
@@ -61,34 +61,21 @@ extrafont::loadfonts(device = "win")
 
 
 ```{r prep}
-## packages: remove or add your necessary packages
+set.seed(2)
 
-required_packages <- c("tidyverse", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext")
-
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander")
 for(i in required_packages) { 
-if(!require(i, character.only = T)) {
-
-  #  if package is not existing, install then load the package
-install.packages(i, dependencies = T)
-require(i, character.only = T)
+  if(!require(i, character.only = T)) {
+    #  if package is not existing, install then load the package
+    install.packages(i, dependencies = T)
+  require(i, character.only = T)
+  }
 }
-}
 
-
-## save plots?
-save <- TRUE
-#save <- FALSE
+panderOptions('table.alignment.default', "left")
 
 ## quality of png's
 dpi <- 750
-
-## font adjust; please adjust to client´s website
-#extrafont::loadfonts(device = "win", quiet = TRUE)
-#font_add_google("Montserrat", "Montserrat")
-# font_add_google("Overpass", "Overpass")
-# font_add_google("Overpass Mono", "Overpass Mono")
-
-
 
 ## theme updates; please adjust to client´s website
 #theme_set(ggthemes::theme_clean(base_size = 15))
@@ -205,38 +192,479 @@ colfunc <- colorRampPalette(c(bl_col, "#bce2d5"))
 pos_cols <- colfunc(10)
 ```
 
-# load data
 
-
-
-```{r}
-
-# 1 saving plots in pdf with example
-
-ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color= drv)) + 
-     geom_smooth(mapping = aes(linetype = drv), method = 'loess') +
-     geom_point()
-
-if(save == T){ 
-  ggsave(here::here("plots", "name_plot.pdf"), name_plot, 
-         width = 12.5, height = 8, device = cairo_pdf)
+```{r common_functions}
+display_number <- function(n, title){
+  tibble(!!sym(title) := format(n, big.mark = ",")) %>% pander()
 }
 ```
 
 
-```{r convert_to_pngs, results='asis', echo=FALSE}
-# 2 convert pdfs into pngs; to be added at the end of the rmd file
-  if(save == T) {
-    pdfs <- list.files(here::here("plots"), pattern = "*.pdf")
-    
-    setwd(here::here("plots", "png"))
-    for(pdf in pdfs) {
-      pdf_convert(pdf = here::here("plots", pdf), format = "png", dpi = 720)
-    }
+```{r, cache}
+con <- dbConnect(
+    bigrquery::bigquery(),
+    project = "dataforseo-bigquery",
+    billing = "dataforseo-bigquery"
+)
+
+sql <- glue("SELECT * FROM `dataforseo-bigquery.dataforseo_data.keyword_data` 
+          WHERE location = 2840 
+          ORDER BY keyword_info_search_volume DESC
+          LIMIT 50000")
+tb <- bq_project_query("dataforseo-bigquery", sql)
+top <- bq_table_download(tb, max_results = 1000000)
+```
+
+
+# Basic stats
+
+```{sql, connection = con, output.var = "sql"}
+SELECT COUNT(keyword_info_search_volume) as `total_count`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE `location` = 2840
+```
+
+```{r}
+total_count <- sql$total_count
+display_number(total_count, "Total number of different searches")
+```
+
+```{sql, connection = con, output.var = "sql"}
+SELECT SUM(COALESCE(keyword_info_search_volume / 10000, 0)) AS total_volume
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE location = 2840
+```
+
+```{r}
+# Calculated in a roundabout way to avoid integer overflow
+total_volume <- sql$total_volume * 10000
+tibble("Total number of searches" = glue("~{round(total_volume / 1000000)} million")) %>% 
+  pander()
+```
+
+
+<br>
+
+This table shows the top 10 searches. They are almost all spelling errors. As in, they are not really searched, but rather people attempting to go to Youtube or Facebook, but typing it wrong. Oddly they are all attributed as having a search volume of exactly 185 million.
+
+```{r}
+top %>% 
+  select(keyword, location, spell, spell_type, keyword_info_search_volume) %>% 
+  head(10) %>% 
+  gt() %>% 
+  tab_options(table.align = "left") %>% 
+  tab_header("Top searches")
+```
+
+```{sql, connection = con, output.var = "sql"}
+SELECT COUNT(*) as `missing_count`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE `location` = 2840
+AND keyword_info_search_volume IS NULL
+```
+
+```{r}
+missing_count <- sql$missing_count
+tibble("Missing search volume" = scales::percent(missing_count / total_count, accuracy = 0.001)) %>% pander()
+```
+
+The missing have some searches that are likely high volume. Thus they are truly missing, and not just 0s.
+
+```{sql, connection = con, output.var = "sql"}
+SELECT keyword, keyword_info_search_volume
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE `location` = 2840
+AND keyword_info_search_volume IS NULL
+ORDER BY RAND()
+LIMIT 10
+```
+
+```{r}
+sql %>% gt() %>% tab_options(table.align = "left") %>% 
+  tab_header("Keywords with missing search volume")
+```
+
+
+```{sql, connection = con, output.var = "sql"}
+SELECT COUNT(*) as `zero_count`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE `location` = 2840
+AND keyword_info_search_volume = 0
+```
+
+```{r}
+zero_count <- sql$zero_count
+tibble("Searches with search volume 0" = scales::percent(zero_count / total_count, accuracy = 0.001)) %>% pander()
+```
+
+
+```{r}
+display_number(total_volume / total_count, "Mean search volume")
+```
+
+
+```{sql, connection = con, output.var = "sql"}
+SELECT approx_quantiles(keyword_info_search_volume, 2)[offset(1)] AS `median`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE location = 2840
+```
+
+
+```{r}
+display_number(sql$median, "Median search volume")
+```
+
+
+```{sql, connection = con, output.var = "sql"}
+SELECT AVG(`keyword_info_cpc`) AS `mean_cpc`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE `location` = 2840
+```
+
+
+```{r}
+display_number(sql$mean_cpc, "Mean CPC")
+```
+
+
+```{sql, connection = con, output.var = "sql"}
+SELECT approx_quantiles(keyword_info_cpc, 2)[offset(1)] AS `median_cpc`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE location = 2840
+```
+
+
+```{r}
+display_number(sql$median_cpc, "Median CPC")
+```
+
+<br>
+
+# Spell types
+
+
+```{sql, connection = con, output.var = "sql"}
+SELECT *
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE location = 2840
+AND spell_type <> ""
+AND keyword_info_search_volume < 10000
+LIMIT 1000
+```
+
+```{sql, connection = con, output.var = "sql"}
+SELECT spell_type, SUM(keyword_info_search_volume) / 10000 AS `volume`
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE location = 2840
+GROUP BY spell_type
+```
+
+```{r spell_types}
+spell_types <- sql %>% mutate(spell_type = ifelse(spell_type == "", "no_spell_type", spell_type)) %>% 
+  mutate(volume = volume * 10000) 
+
+
+spell_types %>% ggplot(aes(x = reorder(spell_type, volume), y = volume)) +
+  geom_bar(stat = "identity", width = 0.8, fill = "turquoise4", color = "black") +
+  labs(x = "", title = "Spell types")
+```
+
+About half of search volume has a spell type. This is especially driven by misspellings of common domains.
+
+```{r}
+spell_types %>% filter(spell_type != "no_spell_type") %$% 
+  sum(volume) / total_volume
+```
+
+<br>
+
+
+
+```{r}
+top %>% group_by(spell) %>% 
+  summarise(volume = sum(keyword_info_search_volume)) %>% 
+  arrange(desc(volume)) %>% 
+  filter(spell != "") %>% 
+  head(15) %>% 
+  gt() %>% 
+  tab_options(table.align = "left") %>% 
+  tab_header("Top 15 intended searches that are misspelled")
+```
+
+<br>
+
+# Questions
+
+
+```{r questions}
+question_words <- c("what", "which", "where", "who", "why", "how")
+questions <- tribble(~question, ~volume)
+for (word in question_words){
+  sql <- glue("SELECT sum(keyword_info_search_volume) FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+            WHERE location = 2840 
+            AND keyword like '{word} %' ")
+  tb <- bq_project_query("dataforseo-bigquery", sql)
+  df <- bq_table_download(tb) 
+  questions %<>% add_row(question = word, volume = df$f0_)
+}
+
+questions %>% mutate(prop = volume / total_volume) %>% 
+  ggplot(aes(x = reorder(question, prop), y = prop)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.005), expand = c(0,0)) +
+  labs(title = "Questions in searches", x = "", y = "")
+```
+
+```{r}
+
+```
+
+
+```{sql, connection = con, output.var = "sql"}
+SELECT SUM(COALESCE(keyword_info_search_volume / 10000, 0)) AS total_volume
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE location = 2840
+AND spell_type = ""
+```
+
+```{r}
+
+```
+
+```{r}
+total_volume_nospell <- sql$total_volume * 10000
+
+tibble("total percentage of questions if psell types are removed" = 
+         scales::percent(questions %$% sum(volume) / total_volume_nospell, accuracy = 0.001)) %>% 
+  pander()
+```
+
+<br>
+
+# Stopwords
+
+
+```{r stopwords, fig.height = 8, fig.width = 6}
+stopwords_list <- tibble(stopword = stopwords::stopwords(language = "en")) %>% 
+  mutate(stopword = str_remove(stopword, "'")) %>% 
+  filter(!(stopword %in% c("shed", "wed", "ill", "hell", "shell")))
+
+get_stopwords_counts <- function(){
+stopwords <- tribble(~stopword, ~volume)
+  for (word in stopword_list$stopword){
+    print(word)
+    sql <- glue(
+      "SELECT SUM(COALESCE(keyword_info_search_volume / 1000, 0)) AS `total_volume` 
+       FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+       WHERE location = 2840 
+       AND keyword like '% {word} %' OR keyword like '{word} %' OR keyword like '% {word}'")
+    tb <- bq_project_query("dataforseo-bigquery", sql)
+  
+    df <- bq_table_download(tb) 
+    stopwords %<>% add_row(stopword = word, volume = df$total_volume * 1000)
+  }
+  
+  write_csv(stopwords, "../proc_data/stopwords.csv")
+}
+stopwords <- read_csv("../proc_data/stopwords.csv")
+
+stopwords %>% mutate(prop = volume / total_volume) %>%
+  filter(prop > 0.001) %>% 
+  ggplot(aes(x = reorder(stopword, prop), y = prop)) +
+  geom_bar(stat = "identity", color = "black", fill = "turquoise4", width = 0.7) +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0), limits = c(0, 0.05)) +
+  labs(x = "", y = "", title = "Searches with specific stopwords") +
+  coord_flip()
+```
+<br>
+
+```{r stopwords_wordcloud}
+set.seed(1)
+stopwords %>% 
+  mutate(stopword = ifelse(stopword == "i", "I", stopword)) %>% 
+  arrange(desc(volume)) %>% 
+  head(25) %>% 
+  ggplot(aes(label = stopword, size = volume, color = factor(sample.int(10, 25, replace = TRUE)))) +
+  geom_text_wordcloud(perc_step = 0.3) +
+  scale_size_area(max_size = 30) +
+  theme_minimal()
+```
+
+
+
+
+<br>
+
+# Search tails
+
+```{r search_tails}
+volume_top <- top %>%  
+  add_rownames() %>% 
+  mutate(rowname = as.numeric(rowname)) %>% 
+  select(rowname, volume = keyword_info_search_volume)
+
+ylab <- c(50, 100, 150, 200)
+
+volume_top %>% 
+  mutate(cat = case_when(
+    rowname < 500 ~ "Top 500",
+    rowname < 1000 ~ "Top 1000",
+    rowname < 2000 ~ "Top 2000",
+    rowname < 5801 ~ "Top 0.001%",
+    T ~ "Remaining 99.99%"
+  )) %>% 
+  mutate(cat = factor(cat, levels = c("Top 500", "Top 1000", "Top 2000", "Top 0.001%", "Remaining 99.99%"))) %>% 
+  head(10500) %>% 
+  ggplot(aes(x = rowname, y = volume, fill = cat)) +
+  geom_area(alpha = 0.8) +
+  scale_y_continuous(
+    labels = glue("{ylab} M"),
+    breaks = 10^6 * ylab,
+    limits = c(0, 200* 10^6), 
+    expand = c(0,0)
+    ) +
+  labs(x = "", title = "Long tail") + 
+  geom_segment(aes(x = 8000, y = 35*10^6, xend = 10500, yend = 35*10^6),
+               arrow = arrow(length = unit(0.5, "cm"))) +
+  scale_x_continuous(expand = c(0,0))
+```
+
+
+
+<br>
+
+```{r search_tails2}
+get_count_range <-  function(lower, higher)
+{
+  sql <- glue(
+        "SELECT COUNT(*) AS `count` 
+         FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+         WHERE location = 2840 
+         AND keyword_info_search_volume >= {lower} 
+         AND keyword_info_search_volume <= {higher}")
+      tb <- bq_project_query("dataforseo-bigquery", sql)
+      bq_table_download(tb)$count
+}
+
+df <- tribble(
+  ~cat, ~count,
+  "0 - 10", get_count_range(0, 10),
+  "11- 100", get_count_range(11, 100),
+  "101 - 1000", get_count_range(101, 1000),
+  "1001 - 10000", get_count_range(1001, 10000),
+  "10001 - 100000", get_count_range(10001, "100000"),
+  "100001+", get_count_range("100001", "100000000000")) 
+
+
+df %>% 
+  mutate(count = count / sum(count)) %>% 
+  ggplot(aes(x = reorder(cat, desc(count)), y = count)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
+  theme_light() +
+  labs(x = "", y = "", title = "Long tail") +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0,0))
+           
+```
+<br>
+
+
+```{r}
+write_length_volume <- function()
+{
+  get_length_volume <-  function(l)
+  {
+    sql <- glue(
+          "SELECT sum(keyword_info_search_volume) / 10000 as `volume`, count(keyword_info_search_volume) as `count`
+           FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+           WHERE location = 2840
+           AND keyword_info_search_volume IS NOT NULL
+           AND LENGTH(keyword) = {l}")
+        tb <- bq_project_query("dataforseo-bigquery", sql)
+        bq_table_download(tb) %>% mutate(length = l)
+  }
+  
+  df <- map_df(1:50, get_length_volume)  
+  write_csv(df, "../proc_data/keyword_length_volume.csv")
+}
+```
+
+
+```{r keyword_length_volume}
+df <- read_csv("../proc_data/keyword_length_volume.csv")
+
+df %>% mutate(
+  volume = 10000 * volume,
+  ratio = volume / count
+) %>% 
+  ggplot(aes(x = length, y = ratio)) +
+  geom_line(color = "turquoise4", size = 1) + geom_point(color = "turquoise4") +
+  theme_light() +
+  labs(x = "", y = "", title = "Average search volume by keyword length")
+```
+
+
+
+<br>
+
+
+# Keyword_info categories
+
+```{r}
+pservices <- read_csv("../raw_data/productsservices.csv") %>% 
+  clean_names() %>% rename(c1 = criterion_id) %>% select(-category) %>% 
+  separate(c1, sep =",\"", into = c("id", "category")) %>% 
+  mutate(category = substr(category, 2, nchar(category) -1)) %>% 
+  separate(category, sep = "/", into = c("cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8"))
+
+toplevel <- pservices %>% filter(is.na(cat2))
+```
+
+
+
+```{r}
+write_categories <- function()
+{
+  get_category_volume <-  function(id){
+    sql <- glue(
+      "SELECT SUM(keyword_info_search_volume) / 10000 AS `search_volume`, AVG(keyword_info_cpc) AS `cpc`, COUNT(*) AS `count`
+       FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+       WHERE location = 2840 
+       AND keyword_info_categories like '%{id}%' ")
+    tb <- bq_project_query("dataforseo-bigquery", sql)
+    bq_table_download(tb) %>% mutate(id = id)
   }
 
-```  
+  df <- map_df(toplevel$id, get_category_volume)  
+  
+  df %>% mutate(search_volume = search_volume * 10000,
+                mean_volume = search_volume / count
+                ) %>% 
+    left_join(toplevel %>% select(id, cat1), by = "id") %>% 
+    write_csv("../proc_data/categories_averages.csv")
+}
+
+df <- read_csv("../proc_data/categories_averages.csv")
+```
 
 
+```{r search_category, fig.height = 6, fig.width = 7}
+df %>% 
+  ggplot(aes(x = fct_rev(cat1), y = mean_volume)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  theme_light() +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 9000), expand = c(0,0)) +
+  labs(x = "", y = "", title = "Search volume mean by category")
+```
 
+<br>
 
+```{r cpc_category, fig.height = 6, fig.width = 7}
+df %>% 
+  ggplot(aes(x = fct_rev(cat1), y = cpc)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  theme_light() +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 2), expand = c(0,0)) +
+  labs(x = "", y = "", title = "CPC mean by category")
+```
