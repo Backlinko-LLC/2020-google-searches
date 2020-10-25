@@ -6,7 +6,7 @@ output:
 ---
 
 ```{r, include=FALSE}
-knitr::opts_chunk$set(echo = T, warning = F, message = F, fig.path = "plots/")
+knitr::opts_chunk$set(echo = T, warning = F, message = F, fig.path = "plots/", cache = T)
 ```
 
 
@@ -23,7 +23,7 @@ set.seed(1)
 
 <br>
 
-```{r}
+```{r, cache}
 con <- dbConnect(
     bigrquery::bigquery(),
     project = "dataforseo-bigquery",
@@ -458,25 +458,33 @@ df %>%
 ```
 <br>
 
-```{r, cache = T}
-get_length_volume <-  function(l)
+```{r}
+write_length_volume <- function()
 {
-  sql <- glue(
-        "SELECT sum(keyword_info_search_volume) / 10000 as `volume`, count(keyword_info_search_volume) as `count`
-         FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
-         WHERE location = 2840
-         AND keyword_info_search_volume IS NOT NULL
-         AND LENGTH(keyword) = {l}")
-      tb <- bq_project_query("dataforseo-bigquery", sql)
-      bq_table_download(tb) %>% mutate(length = l)
+  get_length_volume <-  function(l)
+  {
+    sql <- glue(
+          "SELECT sum(keyword_info_search_volume) / 10000 as `volume`, count(keyword_info_search_volume) as `count`
+           FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+           WHERE location = 2840
+           AND keyword_info_search_volume IS NOT NULL
+           AND LENGTH(keyword) = {l}")
+        tb <- bq_project_query("dataforseo-bigquery", sql)
+        bq_table_download(tb) %>% mutate(length = l)
+  }
+  
+  df <- map_df(1:50, get_length_volume)  
+  write_csv(df, "../proc_data/keyword_length_volume.csv")
 }
-
-
-df <- map_df(1:50, get_length_volume)
+write_length_volume()
 ```
 
 
 ```{r keyword_length_volume}
+df <- read_csv("../proc_data/keyword_length_volume.csv")
+
+df
+
 df %>% mutate(
   volume = 10000 * volume,
   ratio = volume / count
@@ -489,6 +497,68 @@ df %>% mutate(
 
 
 
+<br>
+
+
+## Keyword_info categories
+
+```{r}
+pservices <- read_csv("../raw_data/productsservices.csv") %>% 
+  clean_names() %>% rename(c1 = criterion_id) %>% select(-category) %>% 
+  separate(c1, sep =",\"", into = c("id", "category")) %>% 
+  mutate(category = substr(category, 2, nchar(category) -1)) %>% 
+  separate(category, sep = "/", into = c("cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8"))
+
+toplevel <- pservices %>% filter(is.na(cat2))
+```
 
 
 
+```{r}
+write_categories <- function()
+{
+  get_category_volume <-  function(id){
+    sql <- glue(
+      "SELECT SUM(keyword_info_search_volume) / 10000 AS `search_volume`, AVG(keyword_info_cpc) AS `cpc`, COUNT(*) AS `count`
+       FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+       WHERE location = 2840 
+       AND keyword_info_categories like '%{id}%' ")
+    tb <- bq_project_query("dataforseo-bigquery", sql)
+    bq_table_download(tb) %>% mutate(id = id)
+  }
+
+  df <- map_df(toplevel$id, get_category_volume)  
+  
+  df %>% mutate(search_volume = search_volume * 10000,
+                mean_volume = search_volume / count
+                ) %>% 
+    left_join(toplevel %>% select(id, cat1), by = "id") %>% 
+    write_csv("../proc_data/categories_averages.csv")
+}
+write_categories()
+
+df <- read_csv("../proc_data/categories_averages.csv")
+```
+
+
+```{r search_category, fig.height = 6, fig.width = 7}
+df %>% 
+  ggplot(aes(x = fct_rev(cat1), y = mean_volume)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  theme_light() +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 9000), expand = c(0,0)) +
+  labs(x = "", y = "", title = "Search volume mean by category")
+```
+
+<br>
+
+```{r cpc_category, fig.height = 6, fig.width = 7}
+df %>% 
+  ggplot(aes(x = fct_rev(cat1), y = cpc)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  theme_light() +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 2), expand = c(0,0)) +
+  labs(x = "", y = "", title = "CPC mean by category")
+```
