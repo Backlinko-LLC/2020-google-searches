@@ -458,22 +458,37 @@ df %>%
 ```
 <br>
 
+```{r, cache = T}
+get_length_volume <-  function(l)
+{
+  sql <- glue(
+        "SELECT sum(keyword_info_search_volume) / 10000 as `volume`, count(keyword_info_search_volume) as `count`
+         FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+         WHERE location = 2840
+         AND keyword_info_search_volume IS NOT NULL
+         AND LENGTH(keyword) = {l}")
+      tb <- bq_project_query("dataforseo-bigquery", sql)
+      bq_table_download(tb) %>% mutate(length = l)
+}
 
-Only very small between keyword length and search volume
 
-```{sql, connection = con, output.var = "sql"}
-SELECT LENGTH(keyword) as `len_keyword`, keyword_info_search_volume
-FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
-WHERE location = 2840
-AND keyword_info_search_volume IS NOT NULL
-ORDER BY RAND()
-LIMIT 100000
+df <- map_df(1:50, get_length_volume)
 ```
 
 
-```{r}
-cor.test(sql$len_keyword, sql$keyword_info_search_volume)
+```{r keyword_length_volume}
+df %>% mutate(
+  volume = 10000 * volume,
+  ratio = volume / count
+) %>% 
+  ggplot(aes(x = length, y = ratio)) +
+  geom_line(color = "turquoise4", size = 1) + geom_point(color = "turquoise4") +
+  theme_light() +
+  labs(x = "", y = "", title = "Average search volume by keyword length")
 ```
+
+
+
 
 
 
