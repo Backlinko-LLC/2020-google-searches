@@ -366,6 +366,20 @@ stopwords %>% mutate(prop = volume / total_volume) %>%
   labs(x = "", y = "", title = "Proportion of searches with specific stopwords") +
   coord_flip()
 ```
+<br>
+
+```{r stopwords_wordcloud}
+set.seed(1)
+stopwords %>% 
+  mutate(stopword = ifelse(stopword == "i", "I", stopword)) %>% 
+  arrange(desc(volume)) %>% 
+  head(25) %>% 
+  ggplot(aes(label = stopword, size = volume, color = factor(sample.int(10, 25, replace = TRUE)))) +
+  geom_text_wordcloud(perc_step = 0.3) +
+  scale_size_area(max_size = 30) +
+  theme_minimal()
+```
+
 
 
 
