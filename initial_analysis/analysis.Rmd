@@ -7,15 +7,14 @@ output:
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = T, warning = F, message = F, fig.path = "plots/")
-
 ```
 
 
-### Load data
+## Load data
 
 ```{r}
 library(pacman)
-p_load(dplyr, magrittr, tidyverse, DBI, bigrquery, arrow, pander, vroom, glue, janitor, gt)
+p_load(dplyr, magrittr, tidyverse, DBI, bigrquery, arrow, pander, vroom, glue, janitor, gt, ggwordcloud)
 set.seed(1)
 #pq_auth() in console
 ```
@@ -43,7 +42,7 @@ top <- bq_table_download(tb, max_results = 1000000)
 
 ## Basic stats
 
-### Total number of different searches
+#### Total number of different searches
 
 ```{sql, connection = con, output.var = "sql"}
 SELECT COUNT(keyword_info_search_volume) as `total_count`
@@ -59,7 +58,7 @@ total_count
 <br>
 
 
-### Total number of searches
+#### Total number of searches
 
 (Calculated in a roundabout way to avoid integer overflow)
 
@@ -77,7 +76,7 @@ total_volume
 
 <br>
 
-### Top searches
+#### Top searches
 
 This table shows the top 30 searches. They are all spelling errors. As in, they are not really searched, but rather people attempting to go to Youtube or Facebook, but typing it wrong. Oddly they are all attributed as having a search volume of exactly 185 million. Note that the ones that have spell_type NA are also failed attempts to go on Youtube / Facebook, just unrecognized
 
@@ -88,7 +87,7 @@ top %>%
 
 <br>
 
-### Missing keyword_info_search_volume
+#### Missing keyword_info_search_volume
 
 ```{sql, connection = con, output.var = "sql"}
 SELECT COUNT(*) as `missing_count`
@@ -104,7 +103,7 @@ scales::percent(missing_count / total_count, accuracy = 0.001)
 
 <br>
 
-### Search volume 0
+#### Search volume 0
 
 ```{sql, connection = con, output.var = "sql"}
 SELECT COUNT(*) as `zero_count`
@@ -138,7 +137,7 @@ sql
 
 <br>
 
-### Mean search volume
+#### Mean search volume
 
 
 ```{sql, connection = con, output.var = "sql"}
@@ -161,7 +160,7 @@ total_volume / total_count
 
 <br>
 
-### Median search volume
+#### Median search volume
 
 ```{sql, connection = con, output.var = "sql"}
 SELECT approx_quantiles(keyword_info_search_volume, 2)[offset(1)] AS `median`
@@ -176,7 +175,7 @@ sql$median
 
 <br>
 
-### Mean CPC
+#### Mean CPC
 
 
 ```{sql, connection = con, output.var = "sql"}
@@ -192,7 +191,7 @@ sql$mean_cpc
 
 <br>
 
-### Median CPC
+#### Median CPC
 
 ```{sql, connection = con, output.var = "sql"}
 SELECT approx_quantiles(keyword_info_cpc, 2)[offset(1)] AS `median_cpc`
@@ -207,7 +206,7 @@ sql$median_cpc
 
 <br>
 
-## Proportion of spell types
+## Spell types
 
 <br>
 
@@ -368,6 +367,8 @@ stopwords %>% mutate(prop = volume / total_volume) %>%
   coord_flip()
 ```
 
+
+
 <br>
 
 ## Long tail
@@ -407,20 +408,42 @@ volume_top %>%
 
 
 
+<br>
 
 
 
 
 
+```{r search_tails2}
+get_count_range <-  function(lower, higher)
+{
+  sql <- glue(
+        "SELECT COUNT(*) AS `count` 
+         FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+         WHERE location = 2840 
+         AND keyword_info_search_volume >= {lower} 
+         AND keyword_info_search_volume <= {higher}")
+      tb <- bq_project_query("dataforseo-bigquery", sql)
+      bq_table_download(tb)$count
+}
+
+df <- tribble(
+  ~cat, ~count,
+  "0 - 10", get_count_range(0, 10),
+  "11- 100", get_count_range(11, 100),
+  "101 - 1000", get_count_range(101, 1000),
+  "1001 - 10000", get_count_range(1001, 10000),
+  "10001 - 100000", get_count_range(10001, "100000"),
+  "100001+", get_count_range("100001", "100000000000")) 
 
 
-
-
-
-
-
-
-
-
-
-
+df %>% 
+  mutate(count = count / sum(count)) %>% 
+  ggplot(aes(x = reorder(cat, desc(count)), y = count)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
+  theme_light() +
+  labs(x = "", y = "", title = "Long tail") +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0,0))
+           
+```
+<br>
