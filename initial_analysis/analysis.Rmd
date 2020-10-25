@@ -410,10 +410,6 @@ volume_top %>%
 
 <br>
 
-
-
-
-
 ```{r search_tails2}
 get_count_range <-  function(lower, higher)
 {
@@ -447,3 +443,23 @@ df %>%
            
 ```
 <br>
+
+
+Only very small between keyword length and search volume
+
+```{sql, connection = con, output.var = "sql"}
+SELECT LENGTH(keyword) as `len_keyword`, keyword_info_search_volume
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE location = 2840
+AND keyword_info_search_volume IS NOT NULL
+ORDER BY RAND()
+LIMIT 100000
+```
+
+
+```{r}
+cor.test(sql$len_keyword, sql$keyword_info_search_volume)
+```
+
+
+
