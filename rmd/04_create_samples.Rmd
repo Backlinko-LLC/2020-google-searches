@@ -35,13 +35,14 @@ write_keyword_files <- function(min, max, n, n_files){
     mutate(g = (row_number() -1) %/% (n() / n_files))
   
   for (i in 0:(n_files-1)){
-    write_csv(df %>% filter(g == i) %>% select(keyword), glue("keywords_{min}_to_{max}/{i}.csv"), col_names = F)
+    write_csv(df %>% filter(g == i) %>% select(keyword), 
+              glue("keywords_{min}_to_{max}/{i}.csv"), col_names = F)
   }  
 }
 
-write_keyword_files("100", "300", "4000000", 400)
-write_keyword_files("300", "500", "4000000", 400)
-write_keyword_files("500", "2000", "4000000", 400)
-write_keyword_files("2000", "1000000000", "4000000", 400)
+write_keyword_files("100", "500", "1000000", 100)
+write_keyword_files("500", "1000", "1000000", 100)
+write_keyword_files("1000", "10000", "1000000", 100)
+write_keyword_files("10000", "1000000000", "1000000", 100)
 ```
 
