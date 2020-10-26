@@ -48,7 +48,7 @@ h3 {
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/", cache = T, fig.showtext = TRUE, dpi = 700)
+knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/", cache = F, fig.showtext = TRUE, dpi = 700)
 
 knitr::knit_hooks$set(inline = function(x) {
   prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
@@ -238,7 +238,7 @@ WHERE location = 2840
 ```{r}
 # Calculated in a roundabout way to avoid integer overflow
 total_volume <- sql$total_volume * 10000
-tibble("Total number of searches" = glue("~{round(total_volume / 1000000)} million")) %>% 
+tibble("Total number of searches" = glue("~{format(round(total_volume / 1000000), big.mark = ',')} million")) %>% 
   pander()
 ```
 
@@ -296,6 +296,8 @@ AND keyword_info_search_volume = 0
 zero_count <- sql$zero_count
 tibble("Searches with search volume 0" = scales::percent(zero_count / total_count, accuracy = 0.001)) %>% pander()
 ```
+
+
 
 
 ```{r}
@@ -372,8 +374,9 @@ spell_types %>% ggplot(aes(x = reorder(spell_type, volume), y = volume)) +
 About half of search volume has a spell type. This is especially driven by misspellings of common domains.
 
 ```{r}
-spell_types %>% filter(spell_type != "no_spell_type") %$% 
+spell_type_proportion <- spell_types %>% filter(spell_type != "no_spell_type") %$% 
   sum(volume) / total_volume
+tibble("Proportion of searches with spell type" = scales::percent(spell_type_proportion, accuracy = 0.1)) %>% pander()
 ```
 
 <br>
@@ -415,10 +418,6 @@ questions %>% mutate(prop = volume / total_volume) %>%
   labs(title = "Questions in searches", x = "", y = "")
 ```
 
-```{r}
-
-```
-
 
 ```{sql, connection = con, output.var = "sql"}
 SELECT SUM(COALESCE(keyword_info_search_volume / 10000, 0)) AS total_volume
@@ -428,13 +427,18 @@ AND spell_type = ""
 ```
 
 ```{r}
-
+tibble("Total percentage of searches that are questions" = 
+         scales::percent(questions %$% sum(volume) / total_volume, accuracy = 0.001)) %>% 
+  pander()
 ```
+
+<br>
+
 
 ```{r}
 total_volume_nospell <- sql$total_volume * 10000
 
-tibble("total percentage of questions if psell types are removed" = 
+tibble("Total percentage of searches that are questions if spell types are removed" = 
          scales::percent(questions %$% sum(volume) / total_volume_nospell, accuracy = 0.001)) %>% 
   pander()
 ```
@@ -479,13 +483,13 @@ stopwords %>% mutate(prop = volume / total_volume) %>%
 <br>
 
 ```{r stopwords_wordcloud}
-set.seed(1)
+set.seed(2)
 stopwords %>% 
   mutate(stopword = ifelse(stopword == "i", "I", stopword)) %>% 
   arrange(desc(volume)) %>% 
   head(25) %>% 
   ggplot(aes(label = stopword, size = volume, color = factor(sample.int(10, 25, replace = TRUE)))) +
-  geom_text_wordcloud(perc_step = 0.3) +
+  geom_text_wordcloud(perc_step = 0.5) +
   scale_size_area(max_size = 30) +
   theme_minimal()
 ```
