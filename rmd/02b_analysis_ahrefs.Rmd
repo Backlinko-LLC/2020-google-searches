@@ -235,3 +235,5 @@ df %>% filter(cat == "10000+", volume < 500) %>%
 
 
 I think these volumes indeed look too low for the keywords.
+
+!!!D: Don´t worry about the search volumes for this data set. Remember: We exported a small sample to enrich it with another tool to gain insights for additional variables that the larger data set does not provide like keyword difficulty. 
