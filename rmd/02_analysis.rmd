@@ -48,7 +48,7 @@ h3 {
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/", fig.showtext = TRUE, dpi = 700)
+knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/", cache = T, fig.showtext = TRUE, dpi = 700)
 knitr::knit_hooks$set(inline = function(x) {
   prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
 })
@@ -211,8 +211,6 @@ FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
 WHERE `location` = 2840
 AND keyword_info_search_volume > 0
 ```
-
-
 
 
 
@@ -713,4 +711,76 @@ df %>%
   scale_y_continuous(limits = c(0, 2), expand = c(0,0)) +
   labs(x = "", y = "", title = "CPC median by category")
 ```
+
+
+<br>
+
+# Keyword type
+
+
+```{r keyword_words_count}
+transactional_words <- c("apply", "buy", "coupons", "clearance", "deals", "discount",
+                         "download", "for sale", "order", "purchase", "reserve",
+                         "schedule appointment", "special")
+
+informational_words <- c("how do", "how does", "how can i", "what is", "what are", "ways to", "guide", 
+                         "how to", "tutorial", "best", "cheap", "alternatives", "compare", "improve")
+
+navigational_words <- c("location of", "near me", "features of", "cost of", "hours of", "directions to",
+                        "reviews", "free shipping", "prices", "testimonials")
+
+get_keyword_counts <- function(type, wordlist){
+  words <- tribble(~keyword, ~n)
+  for (word in wordlist){
+    print(word)
+    sql <- glue(
+      "SELECT COUNT(keyword_info_search_volume) AS count
+       FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+       WHERE location = 2840 
+       AND keyword_info_search_volume > 0
+       AND keyword like '% {word} %' OR keyword like '{word} %' OR keyword like '% {word}'")
+    tb <- bq_project_query("dataforseo-bigquery", sql)
+  
+    df <- bq_table_download(tb) 
+    words %<>% add_row(keyword = word, n = df$count)
+  }
+  write_csv(words %>% mutate(type = type), glue("../proc_data/{type}_words.csv"))
+}
+
+
+#get_keyword_counts("transactional", transactional_words)
+#get_keyword_counts("informational", informational_words)
+#get_keyword_counts("navigational", navigational_words)
+
+df <- bind_rows(
+  read_csv("../proc_data/transactional_words.csv"),
+  read_csv("../proc_data/informational_words.csv"),
+  read_csv("../proc_data/navigational_words.csv")
+)
+
+df %>% group_by(type) %>% 
+  summarise(prop = sum(n) / total_count) %>% 
+  ggplot(aes(x = type, y = prop)) +
+  geom_bar(stat = "identity", width = 0.8, fill = "turquoise4", color = "black") +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.13), expand = c(0,0)) +
+  labs("Keyword type", y = "", x = "")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
