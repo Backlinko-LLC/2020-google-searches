@@ -11,7 +11,7 @@ output:
     toc_depth: 3
     toc_float: true
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 
@@ -60,10 +60,11 @@ extrafont::loadfonts(device = "win")
 
 
 
+
 ```{r prep}
 set.seed(2)
 
-required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander")
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "ggridges")
 for(i in required_packages) { 
   if(!require(i, character.only = T)) {
     #  if package is not existing, install then load the package
@@ -196,17 +197,37 @@ pos_cols <- colfunc(10)
 
 ```{r}
 df <- bind_rows(
-    pmap_df(list(0:2), ~read_csv(glue("../proc_data/ahref/export_keywords_100_to_500/{.x}.csv"))) %>% 
+    pmap_df(list(0:99), ~read_csv(glue("../proc_data/ahref/export_keywords_100_to_500/{.x}.csv"))) %>% 
         clean_names() %>% mutate(cat = "100-500"),
-    pmap_df(list(0:2), ~read_csv(glue("../proc_data/ahref/export_keywords_500_to_1000/{.x}.csv"))) %>% 
+    pmap_df(list(0:99), ~read_csv(glue("../proc_data/ahref/export_keywords_500_to_1000/{.x}.csv"))) %>% 
         clean_names() %>% mutate(cat = "500-1000"),
-    pmap_df(list(0:2), ~read_csv(glue("../proc_data/ahref/export_keywords_1000_to_10000/{.x}.csv"))) %>% 
+    pmap_df(list(0:49), ~read_csv(glue("../proc_data/ahref/export_keywords_1000_to_10000/{.x}.csv"))) %>% 
         clean_names() %>% mutate(cat = "1000-10000"),
-    pmap_df(list(0:2), ~read_csv(glue("../proc_data/ahref/export_keywords_10000_to_1000000000/{.x}.csv"))) %>% 
+    pmap_df(list(0:33), ~read_csv(glue("../proc_data/ahref/export_keywords_10000_to_1000000000/{.x}.csv"))) %>% 
             clean_names() %>% mutate(cat = "10000+")
 )
 
+df %<>% mutate(
+  difficulty_cat = case_when(
+    difficulty <= 10 ~ "Easy",
+    between(difficulty, 11, 30) ~ "Medium",
+    between(difficulty, 31, 70) ~ "Hard",
+    between(difficulty, 71, 100) ~ "Super hard"
+  ))
+  
+dfs <- df %>% sample_n(20000) 
+
+tibble("Number of rows" = format(df %>% nrow(), big.mark = ",")) %>% 
+  pander()
 ```
+
+
+<br>
+
+# Preamble
+
+
+<br>
 
 The volume looks weird. It doesn't follow the initial categories:
 
@@ -214,26 +235,377 @@ The volume looks weird. It doesn't follow the initial categories:
 df %>% drop_na(volume) %>% 
     group_by(cat) %>% 
     summarise(
+        n = n(),
         mean = mean(volume),
         median = median(volume),
         max = max(volume),
         min = min(volume)
         ) %>% 
+    arrange(median) %>% 
     pander()
-
 ```
 
-Let's look at some of the searches that had a high search volume in the initial data set:
+Let's look at some of the searches that had a low search volume in the initial data set:
 
 ```{r}
-
-df %>% filter(cat == "10000+", volume < 500) %>% 
+df %>% filter(cat == "100-500", volume > 10000) %>% 
     select(keyword, volume) %>% 
-    head(20) %>% 
+    head(5) %>% 
     pander()
 ```
 
+This doesn't looks like low volume words. And indeed they were not in the original data sets for 100-500 volume. I'm not sure how they came in.
 
-I think these volumes indeed look too low for the keywords.
+This brings up the issue of upscaling. 
 
-!!!D: Don´t worry about the search volumes for this data set. Remember: We exported a small sample to enrich it with another tool to gain insights for additional variables that the larger data set does not provide like keyword difficulty. 
+For example, let's say we are interested in the average keyword difficulty. We could simply take the average keyword difficulty of all the keywords in these exported_keyword datasets. But the representation in this data set is skewed, so that the keywords with high search volume are vastly over-represented, compared to the list of words in the original data set. 
+
+A more correct approach would be to weight them by how large a pool they are a selection from. Eg, if there are 100 keywords that are not included for each keyword in the 100-500 volume category, but only 1 keyword that was not included for each keyword in the 10000+ volume category, they would be assigned accordingly.
+
+In fact, let's see:
+
+```{r}
+length_keyword_files <- function(min, max){
+  sql <- glue("SELECT count(*) as `count`
+          FROM `dataforseo-bigquery.dataforseo_data.keyword_data` 
+          WHERE location = 2840 
+          AND keyword_info_search_volume >= {min}
+          AND keyword_info_search_volume < {max}")
+  tb <- bq_project_query("dataforseo-bigquery", sql)
+  df <- bq_table_download(tb) %>% mutate(min = min, max = max)
+}
+
+scaling <- map2_df(c(100, 500, 1000, 10000), c(500, 1000, 10000, 1000000000), length_keyword_files) %>% 
+    mutate(factor = count / 1000000) %>% relocate(min, max)
+
+scaling %>% pander()
+```
+
+<br>
+
+For now I will just use this list as if its truth and not adjust for volume. This can be changed later.
+
+<br>
+
+
+# Keyword difficulty
+
+
+```{r}
+tribble(~Mean, ~Median,
+        round(mean(df$difficulty, na.rm = T), 2), median(df$difficulty, na.rm = T)) %>% 
+  pander()
+
+```
+
+
+```{r difficulty_volume_scatter}
+dfs %>%
+  ggplot(aes(x = difficulty, y = volume)) +
+  geom_jitter(size = 0.1, alpha = 0.1, height = 0.08, width = 0.3) +
+  scale_y_log10(labels = comma) +
+  geom_smooth(method='loess', formula= y~x) +
+  labs(title = "Keyword difficulty and volume")
+```
+
+```{r difficulty_volume_violin}
+dfs %>% drop_na(difficulty_cat) %>% 
+  ggplot(aes(y = volume, x = difficulty_cat)) +
+  geom_violin(draw_quantiles = c(0.5)) +
+  scale_y_log10(labels = comma) +
+  labs(x = "Difficulty category", title = "Keyword difficulty and volume")
+```
+
+```{r difficulty_cpc_scatter}
+dfs %>%
+  ggplot(aes(x = difficulty, y = cpc)) +
+  geom_jitter(size = 0.1, alpha = 0.1, height = 0.08, width = 0.3) +
+  scale_y_log10(labels = comma) +
+  geom_smooth(method='loess', formula= y~x) +
+  labs(title = "Keyword difficulty and cpc")
+```
+
+```{r difficulty_cpc_violin}
+dfs %>% drop_na(difficulty_cat) %>% 
+  ggplot(aes(y = cpc, x = difficulty_cat)) +
+  geom_violin(draw_quantiles = c(0.5)) +
+  scale_y_log10(labels = comma) +
+  labs(x = "Difficulty category", title = "Keyword difficulty and cpc")
+```
+
+<br>
+
+# SERP features
+
+```{r}
+dff <- dfs %>% 
+  select(keyword, volume, clicks, cpc, serp_features, cps) %>% 
+  separate_rows(serp_features, sep = ",") %>% 
+  mutate(serp_features = ifelse(is.na(serp_features), "(None)", serp_features))
+
+nones <- dff %>% filter(serp_features == "(None)")
+
+dffn <- dff %>% group_by(keyword) %>% 
+  summarise(n_serp = n()) %>% 
+  mutate(n_serp = ifelse(keyword %in% nones$keyword, 0, n_serp)) %>% 
+  mutate(n_serp = ifelse(n_serp >= 6, "6+", as.character(n_serp))) %>% 
+  mutate(n_serp = factor(n_serp, levels = c("0", "1", "2", "3", "4", "5", "6+")))
+
+dffn <- left_join(dffn, dfs, by = "keyword")
+```
+
+
+
+```{r serp_presence, fig.height = 5, fig.width = 7}
+dff %>% group_by(serp_features) %>% 
+  summarise(prop = n() / nrow(dfs)) %>% 
+  ggplot(aes(y = reorder(serp_features, prop), x = prop)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  scale_x_continuous(labels = scales::percent) +
+  labs(y = "SERP feature", x = "", title = "Presence of SERP features")
+```
+```{r serp_presence_n}
+dffn %>% group_by(n_serp) %>%
+  summarise(n = n() / nrow(dffn)) %>% 
+  ggplot(aes(x = n_serp, y = n)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  labs(x = "Number of serp features", y = "", title = "Distribution of SERP features") +
+  scale_y_continuous(labels = scales::percent)
+```
+
+
+```{r serp_volume, fig.height = 5, fig.width = 7}
+order <- dff %>% 
+  group_by(serp_features) %>%
+  summarise(volume = mean(volume, na.rm = T)) %>% 
+  arrange(volume) %>% 
+  pull(serp_features)
+
+
+dff %>% 
+  drop_na(serp_features) %>% 
+  mutate(serp_features = factor(serp_features, levels = order)) %>% 
+  ggplot(aes(y = serp_features, x = volume)) +
+  stat_density_ridges(fill = "turquoise4", color = "black") +
+  scale_x_log10(limits = c(10, 50000)) +
+  labs(title = "SERP features and mean volume", x = "Mean volume")
+```
+```{r serp_volume_n}
+dffn %>% group_by(n_serp) %>%
+  summarise(volume = mean(volume, na.rm = T)) %>% 
+  ggplot(aes(x = n_serp, y = volume)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  labs(x = "Number of serp features", title = "Number of SERP features and mean volume", y = "Mean volume")
+```
+
+```{r serp_volume_n_ridges}
+dffn %>% 
+  ggplot(aes(y = n_serp, x = volume)) +
+  stat_density_ridges(fill = "turquoise4", color = "black") +
+  scale_x_log10(labels = comma) +
+  labs(y = "SERP features", title = "Number of SERP features and volume")
+```
+
+
+
+```{r sero_clicks}
+order <- dff %>% 
+  group_by(serp_features) %>%
+  summarise(mean_clicks = mean(clicks, na.rm = T)) %>% 
+  arrange(mean_clicks) %>% 
+  pull(serp_features)
+
+
+dff %>% 
+  mutate(serp_features = factor(serp_features, levels = order)) %>% 
+  mutate(clicks = clicks + 1) %>% 
+  ggplot(aes(y = serp_features, x = clicks)) +
+  stat_density_ridges(fill = "turquoise4", color = "black") +
+  scale_x_log10(labels = comma)
+```
+```{r serp_clicks_n}
+dffn %>% group_by(n_serp) %>%
+  summarise(clicks = mean(clicks, na.rm = T)) %>% 
+  ggplot(aes(x = n_serp, y = clicks)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  labs(x = "SERP features", title = "Number of SERP features and mean clicks", y = "Mean clicks")
+```
+
+```{r serp_clicks_n_ridge}
+dffn %>% 
+  mutate(clicks = clicks + 1) %>% 
+  ggplot(aes(y = n_serp, x = clicks)) +
+  stat_density_ridges(fill = "turquoise4", color = "black") +
+  scale_x_log10(labels = comma) +
+  labs(y = "SERP features", title = "Number of SERP features and clicks")
+```
+
+
+
+<br>
+
+# Global volume
+
+
+```{r}
+dfv <- 
+  bind_rows(
+    df %>% mutate(region = "US"),
+    df %>% mutate(volume = global_volume - volume, region = "International")
+    )
+```
+
+International searches have much more total volume:
+
+```{r}
+dfv %>% group_by(region) %>% 
+  summarise(volume = format(sum(volume, na.rm = T), big.mark = ",")) %>% 
+  pander()
+```
+
+Internationally there are more searches with very low volume, while US has more searches with medium volume.
+
+```{r comparison_count}
+dfv %>% drop_na(volume) %>% 
+  mutate(volume_group = case_when(volume < 100 ~ "< 100",
+    between(volume, 100, 1000) ~ "100 - 1000",
+    between(volume, 1000, 10000) ~ "1000 - 10,000",
+    volume > 10000 ~ "10,000 +")) %>% 
+  mutate(volume_group = factor(volume_group, levels = c("< 100", "100 - 1000", "1000 - 10,000", "10,000 +"))) %>% 
+  group_by(volume_group, region) %>% 
+  summarise(n = n()) %>% 
+  ggplot(aes(x = volume_group, y = n, fill = region)) +
+  geom_bar(stat = "identity", position = position_dodge(), width = 0.8)
+```
+There is not a large difference in the number of searches with very high volume. However, the total volume of these searches is a lot higher internationally
+
+```{r comparison_volume, fig.width = 9}
+dfv %>% drop_na(volume) %>% 
+  mutate(volume_group = case_when(volume < 100 ~ "< 100",
+    between(volume, 100, 1000) ~ "100 - 1000",
+    between(volume, 1000, 10000) ~ "1000 - 10,000",
+    between(volume, 10000, 100000) ~ "10,000 - 100,000",
+    between(volume, 100000, 1000000) ~ "100,000 - 1M",
+    volume > 1000000 ~ "1M +")) %>% 
+  mutate(volume_group = factor(volume_group, levels = c("< 100", "100 - 1000", "1000 - 10,000", "10,000 - 100,000", "100,000 - 1M", "1M +"))) %>% 
+  group_by(volume_group, region) %>% 
+  summarise(n = sum(volume)) %>% 
+  ggplot(aes(x = volume_group, y = n, fill = region)) +
+  geom_bar(stat = "identity", position = position_dodge(), width = 0.8)
+```
+
+Looking at the number of searches with above 1 million volume:
+
+```{r}
+df_int <- df %>% mutate(international_volume = global_volume - volume) %>% 
+  filter(international_volume > 0, global_volume > 0) %>% 
+  mutate(volume_diff = log10(international_volume) - log10(volume))
+
+tibble(International = df_int %>% filter(international_volume > 1000000) %>% nrow(),
+       US = df_int %>% filter(volume > 1000000) %>% nrow()) %>% 
+  pander()
+```
+
+
+```{r international_v_us_volume}
+df_int_s <- df_int %>% sample_n(200000)
+
+df_int_s %>% 
+  ggplot(aes(x = volume, y = international_volume)) +
+  geom_jitter(size = 0.05, alpha = 0.02, height = 0.15, width = 0.15) +
+  scale_x_log10(labels = comma, expand = c(0,0)) +
+  scale_y_log10(labels = comma, expand = c(0,0)) +
+  geom_abline(intercept = 0, slope = 1, color = "turquoise4", size = 1) +
+  labs(x = "US volume", y = "International volume")
+```
+
+<br>
+
+We can see that they mostly follow each other, but there are some searches with large difference between them.
+
+Higher volume internationally:
+
+```{r}
+df_int %>% 
+  arrange(desc(volume_diff)) %>% 
+  filter(volume != 60) %>% 
+  select(keyword, us_volume = volume, international_volume) %>% 
+  head(5) %>% 
+  pander()
+```
+
+<br>
+
+Higher volume in US:
+
+```{r}
+df_int %>% 
+  arrange(volume_diff) %>% 
+  select(keyword, us_volume = volume, international_volume) %>% 
+  head(5) %>% 
+  pander()
+```
+
+<br>
+
+
+Searches that have higher volume in US have a higher click-per-search on average than searches that have higher volume internationally.
+
+```{r international_cps}
+df_int_s %>% 
+  ggplot(aes(x = volume_diff, y = cps)) +
+  geom_point(alpha = 0.08, size = 0.08) +
+  #scale_y_log10(labels = comma) +
+  geom_smooth(method='lm', formula= y~x) +
+  scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
+  labs(x = "")
+```
+<br>
+
+They also have a higher cost-per-click on average
+
+```{r international_cpc}
+df_int_s %>% 
+  ggplot(aes(x = volume_diff, y = cpc)) +
+  geom_point(alpha = 0.08, size = 0.08) +
+  scale_y_log10(labels = comma) +
+  geom_smooth(method='lm', formula= y~x) +
+  scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
+  labs(x = "")
+```
+<br>
+
+Searches that have higher volume internationally, tend to have higher difficulty
+
+```{r international_difficulty}
+df_int_s %>% 
+  ggplot(aes(x = volume_diff, y = difficulty)) +
+  geom_point(alpha = 0.08, size = 0.08) +
+  #scale_y_log10(labels = comma) +
+  geom_smooth(method='lm', formula= y~x) +
+  scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
+  labs(x = "")
+```
+
+<br>
+
+# Clicks
+
+
+```{r}
+tribble(~Mean, ~Median,
+        round(mean(df$clicks, na.rm = T), 2), median(df$clicks, na.rm = T)) %>% 
+  pander()
+
+```
+```{r}
+dfs %>% ggplot(aes(x = clicks)) +
+  geom_histogram(fill = "turquoise4", color = "black") +
+  scale_x_log10(labels = comma) +
+  labs(title = "Distribution of number of clicks per search", y = "", x = "")
+```
+
+!!!J: I don't think there is any data in the file about organic / paid?
+
+
+
