@@ -262,6 +262,8 @@ For example, let's say we are interested in the average keyword difficulty. We c
 
 A more correct approach would be to weight them by how large a pool they are a selection from. Eg, if there are 100 keywords that are not included for each keyword in the 100-500 volume category, but only 1 keyword that was not included for each keyword in the 10000+ volume category, they would be assigned accordingly.
 
+!!!D: I trust you on this on what makes more sense. 
+
 In fact, let's see:
 
 ```{r}
@@ -308,6 +310,10 @@ dfs %>%
   labs(title = "Keyword difficulty and volume")
 ```
 
+!!!D: Would be interested in the following finding: An increase by 100/500/1000 search volume leads to increase to a 0.5 difficulty score. Hence, may be it makes more sense to swap the the variables to make the difficulty a dependent variable. 
+
+
+
 ```{r difficulty_volume_violin}
 dfs %>% drop_na(difficulty_cat) %>% 
   ggplot(aes(y = volume, x = difficulty_cat)) +
@@ -315,6 +321,19 @@ dfs %>% drop_na(difficulty_cat) %>%
   scale_y_log10(labels = comma) +
   labs(x = "Difficulty category", title = "Keyword difficulty and volume")
 ```
+
+!!!D: Please use the following keyword difficulty scales:
+
+Easy: 0-10
+Medium: 11-30
+Hard: 31-70
+Super hard: 71-100
+
+Ranges should be displayed in the labels. 
+
+People will most likely not understand a violin chart. Alternatives? box blot? 
+
+
 
 ```{r difficulty_cpc_scatter}
 dfs %>%
@@ -332,6 +351,12 @@ dfs %>% drop_na(difficulty_cat) %>%
   scale_y_log10(labels = comma) +
   labs(x = "Difficulty category", title = "Keyword difficulty and cpc")
 ```
+
+!!!D: similar comments as above. 
+
+!!!D: Shame we cannot use the keyword categories here. May be we can try to solve this after the 3rd of November if time remains. Just curios how large the df would be if we select just the columns keyword and info_categories from the original data set. We could do on the google big query page to avoid that rstudio crashes (plus, apply some filters). Just curios to know: You probably have thought of running a left join but why is that not possible?  
+
+
 
 <br>
 
@@ -441,11 +466,39 @@ dffn %>%
 ```
 
 
+!!!D: Can we have a plot of the most often combinations? eg. https://tinyurl.com/y6b9lgva 
+
+!!!D: Any interesting patterns with regards to keyword difficulty, or search eg. the higher the search and keyword difficulty the more SERP features?  Definition SERP feautres: A SERP feature is any result on a Google Search Engine Results Page (SERP) that is not a traditional organic result. The most common SERP Features are: Rich Snippets which add a visual layer to an existing result (e.g., review stars for product ratings).
+
+!!!D: after the 3rd, may make sense to check if there is anything interesting on relationship between keyword category and SERP features. 
+!!!D: Would be great to dive into clicks/CPS vs SERP features. I assume the clicks per search will be less with more SEERP features because people find an answer that Google already provides with their SERP features. 
+
+Some definitions:
+
+The Clicks column shows exactly how many times per month people tend to click any pages when googling this keyword. Some searches result in a lot of clicks, while other high search volume keywords may not bring in as much traffic from search due to the low number of clicks.
+
+The keyword "chauffeur" has a high search volume of 67,000 searches per month. Yet that volume only resulted in 13,406 clicks. One probable reason could be that Google already gave what people wanted instantly - and there was no need to click on the search results.
+
+!!!D: CPS column definition 
+
+The CPS (Click per Search) shows an average number of clicks for all searches. It is basically a correlation between the Clicks metric and the Search Volume of the keyword. 
+
+In the example given, people search for "wow chauffeur" less frequently than "chauffeur", yet the keyword has more Clicks than Searches. 
+
+Further investigation reveals that the word "wow" actually stands for "World of Warcraft", and apparently, people are looking for information on how to summon a "chauffeur" in the game. That makes for a completely different search intent. 
+
+And this is why we have the CPS metric. 
+
+The higher the CPS (i.e people clicking on a few links to satisfy their search query) -- the more chances that you'll get some traffic even if you're not ranking #1 for that search query. 
+
+More info: https://help.ahrefs.com/en/articles/624151-what-does-clicks-stand-for-in-keywords-explorer 
+
 
 <br>
 
 # Global volume
 
+!!!D: That section is fine I would just clean up the labels/remove scientic notation. 
 
 ```{r}
 dfv <- 
@@ -606,6 +659,24 @@ dfs %>% ggplot(aes(x = clicks)) +
 ```
 
 !!!J: I don't think there is any data in the file about organic / paid?
+!!!D: No, there isn´t. We just have CPC. May be we can dive a bit into CPS. 
+
+Can we get a vertical line with the mean in the chart? Like so: https://tinyurl.com/y4r3kvns
 
 
+!!!D: Clicks and Clicks per Volume (CPS) are two different things. See https://help.ahrefs.com/en/articles/624151-what-does-clicks-stand-for-in-keywords-explorer  
+
+
+# Return Rate
+
+May be something interesting here?
+
+Return Rate (RR)
+Return Rate (RR) shows how often the same person searches for a given keyword over a 30-day period.
+
+RR1 means that people typically don’t search for that keyword again within 30 days.
+
+But RR2 and RR3 don’t mean that people search for a given keyword two and three times per month respectively. It just means that the second keyword tends to get more repeated searches than the first one.
+
+https://ahrefs.com/blog/seo-metrics/#:~:text=Return%20Rate%20(RR)%20shows%20how,three%20times%20per%20month%20respectively. 
 
