@@ -203,6 +203,10 @@ top <- bq_table_download(tb, max_results = 50000)
 
 !!!J: In this version I remove all the entries with zero volume for all stats. I think if we prefer to go by count rather than by volume, this is the best approach.
 
+!!!D: Sounds good. I trust you on this. Please make sure to add a note to the methodology section when moving the files. 
+
+
+
 # Basic stats
 
 ```{sql, connection = con, output.var = "sql"}
@@ -341,6 +345,12 @@ spell_types %>% ggplot(aes(x = reorder(spell_type, volume), y = volume)) +
   scale_y_continuous(labels = scales::percent)
 ```
 
+!!!D: adjust labels
+
+"Showing results for"
+"No results found for"
+"Did you mean?"
+"No spell type"
 
 
 
@@ -372,6 +382,9 @@ spell_types %>% mutate(prop = n / sum(n)) %>%
   labs(x = "", y = "", title = "Spell types - by count") +
   scale_y_continuous(labels = scales::percent)
 ```
+
+
+!!!D: without spell type is missing "No spell type"
 
 <br>
 
@@ -579,6 +592,9 @@ df %>%
 
 !!!J: Better title
 
+
+!!!D: x-label is meant to say search volume instead of keyword length, right?  
+
 <br>
 
 
@@ -673,6 +689,9 @@ df %>%
 
 !!!J: I am skeptical for using the median, since it is brought far down by a large number of searches with low volume, even when we exclude 0 volume searches. Remember, the median cpc overall was 0. But you are right that it is an issue with the skewed data set.
 
+!!!D: Maybe a boxplot or something similiar would make more sense here? Or something like that: https://tinyurl.com/yxfwo5vt Leave that out if it´s too complicated to implement.  
+
+
 
 Median:
 
@@ -698,7 +717,7 @@ write_categories_medians <- function()
 df <- read_csv("../proc_data/categories_medians.csv")
 ```
 
-
+!!!D: The info_keyword category is an interesting variable. May be we can add a plot on the total search volume by category? Fro ma practical standpoint is pretty useless, but a general overview would provide a great insight. What do you think? Any other ideas? 
 
 <br>
 
@@ -764,12 +783,119 @@ df %>% group_by(type) %>%
   geom_bar(stat = "identity", width = 0.8, fill = "turquoise4", color = "black") +
   scale_y_continuous(labels = scales::percent, limits = c(0, 0.13), expand = c(0,0)) +
   labs("Keyword type", y = "", x = "")
+
 ```
 
 
 
+!!!D: I would guess most are navigational queries. May be we can add a separate category "navigational - brands"? see a list below. What do you think? 
 
+Also, please not what the % is for keywords that don´t fit into any of the cat. and list the keywords in your descriptions for all cat. 
 
+navigational_words_brands <- c(
+Amazon
+Google
+Apple
+Microsoft
+Samsung Group
+ICBC
+Facebook
+Walmart
+Ping An
+Huawei
+Mercedes-Benz
+Verizon
+China Construction Bank
+AT&T
+Toyota
+State Grid
+Disney
+Agricultural Bank Of China
+WeChat
+Bank of China
+Home Depot
+China Mobile
+Shell
+Saudi Aramco
+Volkswagen
+YouTube
+Tencent
+Starbucks
+Wells Fargo
+BMW
+Deutsche Telekom
+Moutai
+PetroChina
+Coca-Cola
+Mitsubishi Group
+McDonald's
+Taobao
+NTT Group
+Bank of America
+Nike
+Porsche
+Sinopec
+IBM
+CITI
+Honda
+Marlboro
+Deloitte
+Chase
+Tmall
+UPS
+American Express
+Xfinity
+UnitedHealthcare
+Sumitomo Group
+Intel
+VISA
+Instagram
+China Life
+accenture
+Allianz
+CSCEC
+PWC
+Lowe's
+Mitsui
+General Electric
+EY
+Oracle
+Cisco
+BP
+CVS
+Total
+FedEx
+Netflix
+China Merchants Bank
+JP Morgan
+Boeing
+Costco
+SK Group
+Wuliangye
+Evergrande
+Nestle
+Hyundai Group
+China Telecom
+Siemens
+TATA Group
+Mastercard
+Bosch
+IKEA
+HSBC
+Spectrum
+Vodafone
+Pepsi
+Alibaba.com
+Ford
+AIA
+Orange
+Nissan
+Chevron
+GUCCI
+Dell Technologies
+
+                        
+                    
 
 
 
