@@ -48,7 +48,7 @@ h3 {
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/", cache = T, fig.showtext = TRUE, dpi = 700)
+knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/", cache = F, fig.showtext = TRUE, dpi = 700)
 knitr::knit_hooks$set(inline = function(x) {
   prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
 })
@@ -231,6 +231,13 @@ FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
 WHERE location = 2840
 ```
 
+```{sql, connection = con, output.var = "sql"}
+SELECT SUM(COALESCE(keyword_info_search_volume / 10000, 0)) AS total_volume
+FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+WHERE location <> 2840
+```
+
+
 ```{r}
 # Calculated in a roundabout way to avoid integer overflow
 total_volume <- sql$total_volume * 10000
@@ -244,10 +251,13 @@ tibble("Total volume of searches" = glue("~{format(round(total_volume / 10000000
 This table shows the top 10 searches. They are all spelling errors. As in, they are not really searched, but rather people attempting to go to Youtube or Facebook, but typing it wrong. Oddly they are all attributed as having a search volume of exactly 185 million.
 
 ```{r}
-top %>% 
+tbl <- top %>% 
   select(keyword, location, spell, spell_type, keyword_info_search_volume) %>% 
-  head(10) %>% 
-  gt() %>% 
+  head(10)
+
+tbl %>% write_csv("../plots/csv/top_misspell.csv")
+
+tbl %>% gt() %>% 
   tab_options(table.align = "left") %>% 
   tab_header("Top searches")
 ```
@@ -397,12 +407,16 @@ spell_types %>% mutate(prop = n / sum(n)) %>%
 
 
 ```{r}
-top %>% group_by(spell) %>% 
+tbl <- top %>% group_by(spell) %>% 
   summarise(volume = sum(keyword_info_search_volume)) %>% 
   arrange(desc(volume)) %>% 
   filter(spell != "") %>% 
   mutate(volume = scales::percent(volume / sum(volume), accuracy = 0.1)) %>% 
-  head(10) %>% 
+  head(10)# 
+
+tbl %>% write_csv("../plots/csv/misspell.csv")
+
+tbl %>% 
   gt() %>% 
   tab_options(table.align = "left") %>% 
   tab_header("Top 10 intended searches that are misspelled")
@@ -439,6 +453,7 @@ questions %>% mutate(prop = volume / total_volume) %>%
   labs(title = "Questions in searches - by volume", x = "", y = "")
 ```
 
+
 ```{r questions_count}
 write_questions_count <- function(){
   questions <- tribble(~question, ~n)
@@ -447,7 +462,7 @@ write_questions_count <- function(){
               FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
               WHERE location = 2840
               AND keyword_info_search_volume > 0
-              AND keyword like '{word} %' ")
+              AND keyword like '% {word} %' OR keyword like '{word} %' OR keyword like '% {word}'")
     tb <- bq_project_query("dataforseo-bigquery", sql)
     df <- bq_table_download(tb) 
     questions %<>% add_row(question = word, n = df$n)
@@ -459,7 +474,7 @@ questions <- read_csv("../proc_data/questions_count.csv")
 questions %>% mutate(prop = n / total_count) %>% 
   ggplot(aes(x = reorder(question, prop), y = prop)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
-  scale_y_continuous(labels = scales::percent, limits = c(0, 0.025), expand = c(0,0)) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.1), expand = c(0,0)) +
   labs(title = "Questions in searches - by count", x = "", y = "")
 ```
 
@@ -554,8 +569,8 @@ volume_top %>%
     limits = c(0, 200* 10^6), 
     expand = c(0,0)
     ) +
-  labs(x = "", title = "Most searches have low volume", fill = "") + 
-  annotate("text", x = 8800, y = 75*10^6, label = "Remaining 99.9967%") + 
+  labs(x = "", title = "Volume of searches", fill = "") + 
+  annotate("text", x = 7800, y = 75*10^6, label = "Remaining 99.9967%") + 
   geom_segment(aes(x = 7900, y = 35*10^6, xend = 10000, yend = 35*10^6),
                arrow = arrow(length = unit(0.5, "cm"))) +
   scale_x_continuous(expand = c(0,0), limits = c(0, 10000)) +
@@ -589,7 +604,7 @@ df %>%
   ggplot(aes(x = reorder(cat, desc(count)), y = count)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
   theme_light() +
-  labs(x = "Volume", y = "Percentage of all searches", title = "Most searches have low volume") +
+  labs(x = "Volume", y = "Percentage of all searches", title = "Volume of searches") +
   scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0,0))
            
 ```
@@ -674,7 +689,7 @@ df <- read_csv("../proc_data/categories_averages.csv")
 ```
 
 
-```{r search_category, fig.height = 6, fig.width = 7}
+```{r search_category_volume_mean, fig.height = 6, fig.width = 7}
 df %>% 
   ggplot(aes(x = fct_rev(cat1), y = mean_volume)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
@@ -716,7 +731,7 @@ df <- read_csv("../proc_data/categories_total_volume.csv")
 
 <br>
 
-```{r search_category, fig.height = 6, fig.width = 7}
+```{r search_category_total_volume, fig.height = 6, fig.width = 7}
 df %>% 
   mutate(volume = volume / sum(volume)) %>% 
   ggplot(aes(x = fct_rev(cat1), y = volume)) +
@@ -753,7 +768,7 @@ df <- read_csv("../proc_data/categories_cpc.csv")
 
 <br>
 
-```{r search_category, fig.height = 6, fig.width = 7}
+```{r search_category_cpc_mean, fig.height = 6, fig.width = 7}
 df %>% 
   ggplot(aes(x = fct_rev(cat1), y = mean_cpc)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
