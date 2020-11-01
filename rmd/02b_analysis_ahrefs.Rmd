@@ -47,6 +47,7 @@ h3 {
 </style>
 
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/", cache = F, fig.showtext = TRUE, dpi = 700)
 
@@ -59,12 +60,10 @@ extrafont::loadfonts(device = "win")
 ```
 
 
-
-
 ```{r prep}
 set.seed(2)
 
-required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "ggridges")
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "ggridges", "spatstat", "broom")
 for(i in required_packages) { 
   if(!require(i, character.only = T)) {
     #  if package is not existing, install then load the package
@@ -80,7 +79,7 @@ dpi <- 750
 
 ## theme updates; please adjust to client´s website
 #theme_set(ggthemes::theme_clean(base_size = 15))
-theme_set(ggthemes::theme_clean(base_size = 15, base_family = "Montserrat"))
+theme_set(ggthemes::theme_clean(base_size = 15))
 
 
 theme_update(plot.margin = margin(30, 30, 30, 30),
@@ -125,11 +124,11 @@ theme_update(plot.margin = margin(30, 30, 30, 30),
              panel.spacing.x = unit(4, "lines"),
              panel.spacing.y = unit(2, "lines"),
              legend.position = "top",
-             legend.title = element_text(family = "Montserrat",
+             legend.title = element_text(
                                          color = "black",
                                          size = 14,
                                          margin = margin(5, 0, 5, 0)),
-             legend.text = element_text(family = "Montserrat",
+             legend.text = element_text(
                                         color = "black",
                                         size = 11,
                                         margin = margin(4.5, 4.5, 4.5, 4.5)),
@@ -151,7 +150,7 @@ theme_flip <-
 
 ## theme settings for maps
 theme_map <- 
-  theme_void(base_family = "Montserrat") +
+  theme_void() +
   theme(legend.direction = "horizontal",
         legend.box = "horizontal",
         legend.margin = margin(10, 10, 10, 10),
@@ -193,6 +192,7 @@ colfunc <- colorRampPalette(c(bl_col, "#bce2d5"))
 pos_cols <- colfunc(10)
 ```
 
+
 # Read data
 
 ```{r}
@@ -206,19 +206,6 @@ df <- bind_rows(
     pmap_df(list(0:33), ~read_csv(glue("../proc_data/ahref/export_keywords_10000_to_1000000000/{.x}.csv"))) %>% 
             clean_names() %>% mutate(cat = "10000+")
 )
-
-df %<>% mutate(
-  difficulty_cat = case_when(
-    difficulty <= 10 ~ "Easy",
-    between(difficulty, 11, 30) ~ "Medium",
-    between(difficulty, 31, 70) ~ "Hard",
-    between(difficulty, 71, 100) ~ "Super hard"
-  ))
-  
-dfs <- df %>% sample_n(20000) 
-
-tibble("Number of rows" = format(df %>% nrow(), big.mark = ",")) %>% 
-  pander()
 ```
 
 
@@ -256,15 +243,49 @@ df %>% filter(cat == "100-500", volume > 10000) %>%
 
 This doesn't looks like low volume words. And indeed they were not in the original data sets for 100-500 volume. I'm not sure how they came in.
 
-This brings up the issue of upscaling. 
+This removes those keywords that were not in the same category in the data samples I created:
 
-For example, let's say we are interested in the average keyword difficulty. We could simply take the average keyword difficulty of all the keywords in these exported_keyword datasets. But the representation in this data set is skewed, so that the keywords with high search volume are vastly over-represented, compared to the list of words in the original data set. 
 
-A more correct approach would be to weight them by how large a pool they are a selection from. Eg, if there are 100 keywords that are not included for each keyword in the 100-500 volume category, but only 1 keyword that was not included for each keyword in the 10000+ volume category, they would be assigned accordingly.
+```{r}
+df_orig <- bind_rows(
+    pmap_df(list(0:99), ~read_csv(glue("../raw_data/keywords_100_to_500/{.x}.txt"), col_names = c("keyword"))) %>% 
+        clean_names() %>% select(keyword) %>% mutate(cat = "100-500"),
+    pmap_df(list(0:99), ~read_csv(glue("../raw_data/keywords_500_to_1000/{.x}.txt"), col_names = c("keyword"))) %>% 
+        clean_names() %>% mutate(cat = "500-1000"),
+    pmap_df(list(0:99), ~read_csv(glue("../raw_data/keywords_1000_to_10000/{.x}.txt"), col_names = c("keyword"))) %>% 
+        clean_names() %>% mutate(cat = "1000-10000"),
+    pmap_df(list(0:99), ~read_csv(glue("../raw_data/keywords_10000_to_1000000000/{.x}.txt"), col_names = c("keyword"))) %>% 
+            clean_names() %>% mutate(cat = "10000+")
+)
+```
 
-!!!D: I trust you on this on what makes more sense. 
+```{r}
+df %<>% inner_join(df_orig, by = c("cat", "keyword"))
+```
 
-In fact, let's see:
+There are still ~2.5 million rows left:
+
+```{r}
+tibble("Number of rows" = format(df %>% nrow(), big.mark = ",")) %>% 
+  pander()
+```
+
+
+
+
+Another issue is that of the representativeness of the samples. Keywords with less than 100 volume are not even represented. And the othe rvolumes are represented at skewed ratios. This makes a large difference, especially if we look at stats based on search instead of based on volume.
+
+To me, it still makes most sense to look at it based on volume. But you've been quite clear that this is not what we want. Still, it seems wrong to me to use this unrepresentative dataset, and report things such as mean. That will fully depend on how we happened to create the samples. Since most of searches have low volume, removing those with volume below 100 makes a huge difference.
+
+So, for analyses where this is important, I will perform them in three different ways.
+
+1. Using the samples here directly
+
+2. Using the samples here, but scaled so that they are representative of the original data set. (Except that < 100 volume is removed.)
+
+3. Using the scaled samples, and also go by volume instead of count.
+
+As we can see, these three approaches give quite different results.
 
 ```{r}
 length_keyword_files <- function(min, max){
@@ -277,44 +298,89 @@ length_keyword_files <- function(min, max){
   df <- bq_table_download(tb) %>% mutate(min = min, max = max)
 }
 
-scaling <- map2_df(c(100, 500, 1000, 10000), c(500, 1000, 10000, 1000000000), length_keyword_files) %>% 
+scaling <- map2_df(c(0, 100, 500, 1000, 10000), c(100, 500, 1000, 10000, 1000000000), length_keyword_files) %>% 
     mutate(factor = count / 1000000) %>% relocate(min, max)
 
 scaling %>% pander()
 ```
 
-<br>
-
-For now I will just use this list as if its truth and not adjust for volume. This can be changed later.
 
 <br>
+
+
+```{r}
+df %<>% mutate(
+  difficulty_cat = case_when(
+    difficulty <= 10 ~ "Easy\n(0-10)",
+    between(difficulty, 11, 30) ~ "Medium\n(11-30)",
+    between(difficulty, 31, 70) ~ "Hard\n(31-70)",
+    between(difficulty, 71, 100) ~ "Super hard\n(71-100)"
+  )) %>% 
+  mutate(difficulty_cat = factor(difficulty_cat, levels = c("Easy\n(0-10)", "Medium\n(11-30)", "Hard\n(31-70)", "Super hard\n(71-100)"))) %>% 
+  mutate(log_volume = log10(volume))
+
+dfs <- df %>% sample_n(20000) 
+
+rdf <- bind_rows(
+  df %>% filter(between(volume, 100, 500)) %>% 
+    sample_n(scaling %>% filter(min == 100) %>% pull(factor) * 2000),
+  df %>% filter(between(volume, 100, 500)) %>% 
+    sample_n(scaling %>% filter(min == 500) %>% pull(factor) * 2000),
+  df %>% filter(between(volume, 1000, 10000)) %>% 
+    sample_n(scaling %>% filter(min == 1000) %>% pull(factor) * 2000),
+  df %>% filter(between(volume, 10000, 1000000000)) %>% 
+    sample_n(scaling %>% filter(min == 10000) %>% pull(factor) * 2000)
+)
+```
 
 
 # Keyword difficulty
 
+Mean and median of sample:
 
 ```{r}
 tribble(~Mean, ~Median,
         round(mean(df$difficulty, na.rm = T), 2), median(df$difficulty, na.rm = T)) %>% 
   pander()
+```
 
+Mean and median of representative sample:
+
+```{r}
+tribble(~Mean, ~Median,
+        round(mean(rdf$difficulty, na.rm = T), 2), median(rdf$difficulty, na.rm = T)) %>% 
+  pander()
+```
+
+Mean and median of sample by volume
+
+
+```{r}
+tribble(~Mean, ~Median,
+        round(weighted.mean(rdf$difficulty, rdf$volume, na.rm = T), 2), weighted.median(rdf$difficulty, rdf$volume)) %>% 
+  pander()
 ```
 
 
-```{r difficulty_volume_scatter}
+```{r difficulty_volume_sample}
 dfs %>%
-  ggplot(aes(x = difficulty, y = volume)) +
+  ggplot(aes(x = volume, y = difficulty)) +
   geom_jitter(size = 0.1, alpha = 0.1, height = 0.08, width = 0.3) +
-  scale_y_log10(labels = comma) +
-  geom_smooth(method='loess', formula= y~x) +
+  scale_x_log10(labels = comma) +
+  geom_smooth(method='lm', formula= y~x) +
   labs(title = "Keyword difficulty and volume")
+
+
 ```
 
-!!!D: Would be interested in the following finding: An increase by 100/500/1000 search volume leads to increase to a 0.5 difficulty score. Hence, may be it makes more sense to swap the the variables to make the difficulty a dependent variable. 
+For each doubling of volume, the difficulty increases by 1.63:
 
+```{r}
+lm1 <- lm(difficulty ~ log2(volume), dfs)
+lm1 %>% summary()
+```
 
-
-```{r difficulty_volume_violin}
+```{r difficulty_volume_violin_sample}
 dfs %>% drop_na(difficulty_cat) %>% 
   ggplot(aes(y = volume, x = difficulty_cat)) +
   geom_violin(draw_quantiles = c(0.5)) +
@@ -322,16 +388,9 @@ dfs %>% drop_na(difficulty_cat) %>%
   labs(x = "Difficulty category", title = "Keyword difficulty and volume")
 ```
 
-!!!D: Please use the following keyword difficulty scales:
+People will most likely not understand a violin chart. Alternatives? box blot?
 
-Easy: 0-10
-Medium: 11-30
-Hard: 31-70
-Super hard: 71-100
-
-Ranges should be displayed in the labels. 
-
-People will most likely not understand a violin chart. Alternatives? box blot? 
+!!!J: In my experience people understand violin charts equally well as box charts, and I have shown them quite a few times. It is almost a box chart, with a median, and some area above and below. So I think we can keep it. If you insist, it's an easy change to make box charts instead. Although I do think they are not really needed here, since the scatter plots are good.
 
 
 
@@ -340,9 +399,10 @@ dfs %>%
   ggplot(aes(x = difficulty, y = cpc)) +
   geom_jitter(size = 0.1, alpha = 0.1, height = 0.08, width = 0.3) +
   scale_y_log10(labels = comma) +
-  geom_smooth(method='loess', formula= y~x) +
+  geom_smooth(method='lm', formula= y~x) +
   labs(title = "Keyword difficulty and cpc")
 ```
+
 
 ```{r difficulty_cpc_violin}
 dfs %>% drop_na(difficulty_cat) %>% 
@@ -352,9 +412,15 @@ dfs %>% drop_na(difficulty_cat) %>%
   labs(x = "Difficulty category", title = "Keyword difficulty and cpc")
 ```
 
+
+
+
+
 !!!D: similar comments as above. 
 
 !!!D: Shame we cannot use the keyword categories here. May be we can try to solve this after the 3rd of November if time remains. Just curios how large the df would be if we select just the columns keyword and info_categories from the original data set. We could do on the google big query page to avoid that rstudio crashes (plus, apply some filters). Just curios to know: You probably have thought of running a left join but why is that not possible?  
+
+!!!J: How would you do that exactly in practice? Like, what do I left join on, concretely? I know, the keywords from here. But how do I get that list into the database or the SQL command? Not saying it's not possible, Im just not sure how to do it.
 
 
 
@@ -362,11 +428,14 @@ dfs %>% drop_na(difficulty_cat) %>%
 
 # SERP features
 
+Note there are (at least) two additional SERP feature types, knowledge panel and videos, for which the sample size is too small to be included.
+
 ```{r}
 dff <- dfs %>% 
   select(keyword, volume, clicks, cpc, serp_features, cps) %>% 
   separate_rows(serp_features, sep = ",") %>% 
-  mutate(serp_features = ifelse(is.na(serp_features), "(None)", serp_features))
+  mutate(serp_features = ifelse(is.na(serp_features), "(None)", serp_features)) %>% 
+  filter(!(serp_features %in% c("Videos", "Knowledge panel")))
 
 nones <- dff %>% filter(serp_features == "(None)")
 
@@ -381,7 +450,10 @@ dffn <- left_join(dffn, dfs, by = "keyword")
 
 
 
-```{r serp_presence, fig.height = 5, fig.width = 7}
+In sample:
+
+
+```{r serp_presence_orig, fig.height = 5, fig.width = 7}
 dff %>% group_by(serp_features) %>% 
   summarise(prop = n() / nrow(dfs)) %>% 
   ggplot(aes(y = reorder(serp_features, prop), x = prop)) +
@@ -389,7 +461,50 @@ dff %>% group_by(serp_features) %>%
   scale_x_continuous(labels = scales::percent) +
   labs(y = "SERP feature", x = "", title = "Presence of SERP features")
 ```
-```{r serp_presence_n}
+```{r}
+rdff <- rdf %>% 
+  select(keyword, volume, clicks, cpc, serp_features, cps) %>% 
+  separate_rows(serp_features, sep = ",") %>% 
+  mutate(serp_features = ifelse(is.na(serp_features), "(None)", serp_features)) %>% 
+  filter(!(serp_features %in% c("Videos", "Knowledge panel")))
+
+nones <- rdff %>% filter(serp_features == "(None)")
+
+rdffn <- rdff %>% group_by(keyword) %>% 
+  summarise(n_serp = n()) %>% 
+  mutate(n_serp = ifelse(keyword %in% nones$keyword, 0, n_serp)) %>% 
+  mutate(n_serp = ifelse(n_serp >= 6, "6+", as.character(n_serp))) %>% 
+  mutate(n_serp = factor(n_serp, levels = c("0", "1", "2", "3", "4", "5", "6+")))
+
+rdffn <- left_join(dffn %>% select(keyword, n_serp), dfs, by = "keyword")
+```
+
+Representative:
+
+```{r serp_presence_repr, fig.height = 5, fig.width = 7}
+rdff %>% group_by(serp_features) %>% 
+  summarise(prop = n() / nrow(rdff)) %>% 
+  ggplot(aes(y = reorder(serp_features, prop), x = prop)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  scale_x_continuous(labels = scales::percent) +
+  labs(y = "SERP feature", x = "", title = "Presence of SERP features")
+```
+
+By volume:
+
+```{r serp_presence_volume, fig.height = 5, fig.width = 7}
+rdff %>% group_by(serp_features) %>% 
+  summarise(prop = sum(volume) / sum(rdff$volume)) %>% 
+  ggplot(aes(y = reorder(serp_features, prop), x = prop)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  scale_x_continuous(labels = scales::percent) +
+  labs(y = "SERP feature", x = "", title = "Presence of SERP features")
+```
+
+In sample:
+
+
+```{r serp_presence_n_orig}
 dffn %>% group_by(n_serp) %>%
   summarise(n = n() / nrow(dffn)) %>% 
   ggplot(aes(x = n_serp, y = n)) +
@@ -398,80 +513,91 @@ dffn %>% group_by(n_serp) %>%
   scale_y_continuous(labels = scales::percent)
 ```
 
+By volume:
 
-```{r serp_volume, fig.height = 5, fig.width = 7}
+```{r serp_presence_n_volume}
+rdffn %>% group_by(n_serp) %>%
+  summarise(prop = sum(volume) / sum(rdff$volume)) %>% 
+  ggplot(aes(x = n_serp, y = prop)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  labs(x = "Number of serp features", y = "", title = "Distribution of SERP features") +
+  scale_y_continuous(labels = scales::percent)
+```
+
+
+
+The knowledge card has a huge effect in reducing the cps, while the other SERP features have limited effect. Searches with the Shopping results SERP feature have higher cps on average.
+
+```{r serp_cps}
 order <- dff %>% 
   group_by(serp_features) %>%
-  summarise(volume = mean(volume, na.rm = T)) %>% 
-  arrange(volume) %>% 
+  summarise(mean_cps = mean(cps, na.rm = T)) %>% 
+  arrange(mean_cps) %>% 
   pull(serp_features)
 
-
-dff %>% 
-  drop_na(serp_features) %>% 
-  mutate(serp_features = factor(serp_features, levels = order)) %>% 
-  ggplot(aes(y = serp_features, x = volume)) +
-  stat_density_ridges(fill = "turquoise4", color = "black") +
-  scale_x_log10(limits = c(10, 50000)) +
-  labs(title = "SERP features and mean volume", x = "Mean volume")
-```
-```{r serp_volume_n}
-dffn %>% group_by(n_serp) %>%
-  summarise(volume = mean(volume, na.rm = T)) %>% 
-  ggplot(aes(x = n_serp, y = volume)) +
-  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
-  labs(x = "Number of serp features", title = "Number of SERP features and mean volume", y = "Mean volume")
-```
-
-```{r serp_volume_n_ridges}
-dffn %>% 
-  ggplot(aes(y = n_serp, x = volume)) +
-  stat_density_ridges(fill = "turquoise4", color = "black") +
-  scale_x_log10(labels = comma) +
-  labs(y = "SERP features", title = "Number of SERP features and volume")
-```
-
-
-
-```{r sero_clicks}
-order <- dff %>% 
-  group_by(serp_features) %>%
-  summarise(mean_clicks = mean(clicks, na.rm = T)) %>% 
-  arrange(mean_clicks) %>% 
-  pull(serp_features)
-
-
+  
 dff %>% 
   mutate(serp_features = factor(serp_features, levels = order)) %>% 
-  mutate(clicks = clicks + 1) %>% 
-  ggplot(aes(y = serp_features, x = clicks)) +
+  ggplot(aes(y = serp_features, x = cps)) +
   stat_density_ridges(fill = "turquoise4", color = "black") +
-  scale_x_log10(labels = comma)
+  labs(y = "SERP feature", title = "SERP features and cps")
 ```
-```{r serp_clicks_n}
-dffn %>% group_by(n_serp) %>%
-  summarise(clicks = mean(clicks, na.rm = T)) %>% 
-  ggplot(aes(x = n_serp, y = clicks)) +
+
+
+Low difficulty keywords have fewer SERP features 
+
+```{r, serp_difficulty_boxplot}
+rdffn %>% mutate(n_serp = as.numeric(n_serp)) %>% 
+  drop_na(difficulty_cat) %>% 
+  ggplot(aes(x = difficulty_cat, y = n_serp)) +
+  geom_boxplot() +
+  labs(x = "Difficulty", y = "SERP features", title = "Difficulty and number of SERP features")
+```
+
+
+```{r serp_difficulty_n}
+rdffn %>% group_by(n_serp) %>%
+  summarise(difficulty = mean(difficulty, na.rm = T)) %>% 
+  ggplot(aes(x = n_serp, y = difficulty)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
-  labs(x = "SERP features", title = "Number of SERP features and mean clicks", y = "Mean clicks")
+  labs(x = "SERP features", title = "Number of SERP features and mean clicks", y = "Difficulty")
 ```
 
-```{r serp_clicks_n_ridge}
-dffn %>% 
-  mutate(clicks = clicks + 1) %>% 
-  ggplot(aes(y = n_serp, x = clicks)) +
-  stat_density_ridges(fill = "turquoise4", color = "black") +
-  scale_x_log10(labels = comma) +
-  labs(y = "SERP features", title = "Number of SERP features and clicks")
+```{r serp_pairs}
+find_pairs <-  function(){
+  rs <- rdff %>% filter(serp_features != "(None)") %>% 
+    sample_n(20000)
+  kw <- rs %>% distinct(keyword) %>% pull(keyword)
+  
+  get_table <- function(k){
+    a <- rs %>% filter(keyword == k, serp_features != "(None)")
+    crossing(v1 = a$serp_features, v2= a$serp_features) %>% filter(v1 < v2)
+  }
+  
+  pairs <- map_dfr(kw, get_table) %>% 
+    group_by(v1, v2) %>% 
+    summarise(n = n())
+  
+  pairs %>% write_csv("../proc_data/serp_pairs.csv")
+}
+
+pairs <- read_csv("../proc_data/serp_pairs.csv") %>% 
+  mutate(n = n / sum(n))
+
+pairs %>% 
+  arrange(desc(n)) %>%
+  head(10) %>% 
+  mutate(pair = glue("{v1} & {v2}")) %>% 
+  ggplot(aes(y = reorder(pair, n), x = n)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
+  labs(x = "", y = "SERP feature pair", title = "Most common SERP feature pairings") +
+  scale_x_continuous(labels = scales::percent)
 ```
 
 
-!!!D: Can we have a plot of the most often combinations? eg. https://tinyurl.com/y6b9lgva 
-
-!!!D: Any interesting patterns with regards to keyword difficulty, or search eg. the higher the search and keyword difficulty the more SERP features?  Definition SERP feautres: A SERP feature is any result on a Google Search Engine Results Page (SERP) that is not a traditional organic result. The most common SERP Features are: Rich Snippets which add a visual layer to an existing result (e.g., review stars for product ratings).
+Definition SERP feautres: A SERP feature is any result on a Google Search Engine Results Page (SERP) that is not a traditional organic result. The most common SERP Features are: Rich Snippets which add a visual layer to an existing result (e.g., review stars for product ratings).
 
 !!!D: after the 3rd, may make sense to check if there is anything interesting on relationship between keyword category and SERP features. 
-!!!D: Would be great to dive into clicks/CPS vs SERP features. I assume the clicks per search will be less with more SEERP features because people find an answer that Google already provides with their SERP features. 
 
 Some definitions:
 
@@ -498,8 +624,6 @@ More info: https://help.ahrefs.com/en/articles/624151-what-does-clicks-stand-for
 
 # Global volume
 
-!!!D: That section is fine I would just clean up the labels/remove scientic notation. 
-
 ```{r}
 dfv <- 
   bind_rows(
@@ -512,7 +636,8 @@ International searches have much more total volume:
 
 ```{r}
 dfv %>% group_by(region) %>% 
-  summarise(volume = format(sum(volume, na.rm = T), big.mark = ",")) %>% 
+  summarise(volume = sum(volume, na.rm = T)) %>% 
+  mutate(volume = scales::percent(volume / sum(volume))) %>% 
   pander()
 ```
 
@@ -527,10 +652,15 @@ dfv %>% drop_na(volume) %>%
   mutate(volume_group = factor(volume_group, levels = c("< 100", "100 - 1000", "1000 - 10,000", "10,000 +"))) %>% 
   group_by(volume_group, region) %>% 
   summarise(n = n()) %>% 
+  ungroup() %>% 
+  mutate(n = n / sum(n)) %>% 
   ggplot(aes(x = volume_group, y = n, fill = region)) +
-  geom_bar(stat = "identity", position = position_dodge(), width = 0.8)
+  geom_bar(stat = "identity", position = position_dodge(), width = 0.8, color = "black") +
+  labs(fill = "Region", x = "Volume", y = "") +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0))
 ```
 There is not a large difference in the number of searches with very high volume. However, the total volume of these searches is a lot higher internationally
+
 
 ```{r comparison_volume, fig.width = 9}
 dfv %>% drop_na(volume) %>% 
@@ -542,25 +672,22 @@ dfv %>% drop_na(volume) %>%
     volume > 1000000 ~ "1M +")) %>% 
   mutate(volume_group = factor(volume_group, levels = c("< 100", "100 - 1000", "1000 - 10,000", "10,000 - 100,000", "100,000 - 1M", "1M +"))) %>% 
   group_by(volume_group, region) %>% 
-  summarise(n = sum(volume)) %>% 
+  summarise(n = sum(volume)) %>%
+  ungroup() %>% 
+  mutate(n = n / sum(n)) %>% 
   ggplot(aes(x = volume_group, y = n, fill = region)) +
-  geom_bar(stat = "identity", position = position_dodge(), width = 0.8)
+  geom_bar(stat = "identity", position = position_dodge(), width = 0.8, color = "black") +
+  labs(fill = "Region", x = "Volume", y = "") +
+  scale_y_continuous(labels = comma, expand = c(0,0))
 ```
 
-Looking at the number of searches with above 1 million volume:
 
-```{r}
+
+```{r international_v_us_volume}
 df_int <- df %>% mutate(international_volume = global_volume - volume) %>% 
   filter(international_volume > 0, global_volume > 0) %>% 
   mutate(volume_diff = log10(international_volume) - log10(volume))
 
-tibble(International = df_int %>% filter(international_volume > 1000000) %>% nrow(),
-       US = df_int %>% filter(volume > 1000000) %>% nrow()) %>% 
-  pander()
-```
-
-
-```{r international_v_us_volume}
 df_int_s <- df_int %>% sample_n(200000)
 
 df_int_s %>% 
@@ -606,9 +733,9 @@ Searches that have higher volume in US have a higher click-per-search on average
 
 ```{r international_cps}
 df_int_s %>% 
+  filter(cps < 5) %>% 
   ggplot(aes(x = volume_diff, y = cps)) +
-  geom_point(alpha = 0.08, size = 0.08) +
-  #scale_y_log10(labels = comma) +
+  geom_point(alpha = 0.02, size = 0.02) +
   geom_smooth(method='lm', formula= y~x) +
   scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
   labs(x = "")
@@ -644,39 +771,69 @@ df_int_s %>%
 
 # Clicks
 
+In sample:
 
 ```{r}
 tribble(~Mean, ~Median,
         round(mean(df$clicks, na.rm = T), 2), median(df$clicks, na.rm = T)) %>% 
   pander()
-
 ```
+
+In representative sample:
+
 ```{r}
-dfs %>% ggplot(aes(x = clicks)) +
+tribble(~Mean, ~Median,
+        round(mean(rdf$clicks, na.rm = T), 2), median(rdf$clicks, na.rm = T)) %>% 
+  pander()
+```
+
+By volume
+
+```{r}
+tribble(~Mean, ~Median,
+        round(weighted.mean(rdf$clicks, rdf$volume, na.rm = T), 2), weighted.median(rdf$clicks, rdf$volume, na.rm = T)) %>% 
+  pander()
+```
+
+
+```{r dist_clicks_sample}
+log_mean <- 10 ^ (df %>% mutate(clicks = clicks + 1) %>% 
+  mutate(log_clicks = log10(clicks)) %>% 
+  summarise(m = mean(log_clicks, na.rm = T)) %>% 
+  pull(m))
+
+df %>% ggplot(aes(x = clicks)) +
   geom_histogram(fill = "turquoise4", color = "black") +
   scale_x_log10(labels = comma) +
-  labs(title = "Distribution of number of clicks per search", y = "", x = "")
+  scale_y_continuous(limits = c(0, 250000), expand = c(0,0)) +
+  labs(title = "Distribution of number of clicks", y = "", x = "") +
+  geom_vline(xintercept = log_mean, linetype = "dashed", color = "blue", size = 1) +
+  ggeasy::easy_remove_y_axis()
 ```
+Note that this is in sample, so the lowest part of the distribution is not included. Probably does not really make sense.
 
-!!!J: I don't think there is any data in the file about organic / paid?
-!!!D: No, there isn´t. We just have CPC. May be we can dive a bit into CPS. 
+<br>
 
-Can we get a vertical line with the mean in the chart? Like so: https://tinyurl.com/y4r3kvns
-
-
-!!!D: Clicks and Clicks per Volume (CPS) are two different things. See https://help.ahrefs.com/en/articles/624151-what-does-clicks-stand-for-in-keywords-explorer  
 
 
 # Return Rate
 
-May be something interesting here?
+Comparison of searches with same volume but different return rates:
 
-Return Rate (RR)
-Return Rate (RR) shows how often the same person searches for a given keyword over a 30-day period.
+```{r}
+bind_rows(
+  df %>% filter(return_rate > 10) %>% 
+    summarise(mean_cpc = mean(cpc, na.rm = T), mean_clicks = mean(clicks, na.rm = T), mean_cpc = mean(cps, na.rm = T), mean_difficulty = mean(difficulty, na.rm = T)) %>% 
+    mutate(return_rate = "very high") %>% relocate(return_rate),
 
-RR1 means that people typically don’t search for that keyword again within 30 days.
+  df %>% filter(return_rate > 10) %>% 
+    select(number, volume) %>% 
+    left_join(df %>% filter(return_rate < 10), by = c("number", "volume")) %>% 
+    distinct(number, volume, cat, .keep_all = T) %>% 
+    summarise(mean_cpc = mean(cpc, na.rm = T), mean_clicks = mean(clicks, na.rm = T), mean_cpc = mean(cps, na.rm = T), mean_difficulty = mean(difficulty, na.rm = T)) %>% 
+    mutate(return_rate = "low") %>% relocate(return_rate)
+) %>% pander()
+```
 
-But RR2 and RR3 don’t mean that people search for a given keyword two and three times per month respectively. It just means that the second keyword tends to get more repeated searches than the first one.
-
-https://ahrefs.com/blog/seo-metrics/#:~:text=Return%20Rate%20(RR)%20shows%20how,three%20times%20per%20month%20respectively. 
+We can see that searches with high return rates tend to have lower difficulty, and to be clicked on a lot more.
 

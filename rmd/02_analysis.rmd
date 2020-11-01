@@ -337,21 +337,19 @@ GROUP BY spell_type
 ```
 
 ```{r spell_types_volume, fig.width = 9}
-spell_types <- sql %>% mutate(spell_type = ifelse(spell_type == "", "no_spell_type", spell_type)) %>% 
-  mutate(volume = volume / sum(volume)) 
+spell_types <- sql %>% 
+  mutate(spell_type = case_when(
+    spell_type == "" ~ "No spell type",
+    spell_type == "showing_results_for" ~ "Showing results for",
+    spell_type == "did_you_mean" ~ "Did you mean",
+    spell_type == "no_results_found_for" ~ "No results found for")) %>% 
+  mutate(volume = volume / sum(volume))
+
 spell_types %>% ggplot(aes(x = reorder(spell_type, volume), y = volume)) +
   geom_bar(stat = "identity", width = 0.8, fill = "turquoise4", color = "black") +
   labs(x = "", y = "", title = "Spell types - by volume") +
   scale_y_continuous(labels = scales::percent)
 ```
-
-!!!D: adjust labels
-
-"Showing results for"
-"No results found for"
-"Did you mean?"
-"No spell type"
-
 
 
 <br>
@@ -375,7 +373,14 @@ tibble("Proportion with spell type" = scales::percent(prop, accuracy = 0.001)) %
 
 
 ```{r spell_types_count}
-spell_types <- sql %>% filter(spell_type != "")
+spell_types <- sql %>% 
+  filter(spell_type != "") %>% 
+  mutate(spell_type = case_when(
+    spell_type == "" ~ "No spell type",
+    spell_type == "showing_results_for" ~ "Showing results for",
+    spell_type == "did_you_mean" ~ "Did you mean",
+    spell_type == "no_results_found_for" ~ "No results found for"))
+
 spell_types %>% mutate(prop = n / sum(n)) %>% 
   ggplot(aes(x = reorder(spell_type, prop), y = prop)) +
   geom_bar(stat = "identity", width = 0.8, fill = "turquoise4", color = "black") +
@@ -385,6 +390,8 @@ spell_types %>% mutate(prop = n / sum(n)) %>%
 
 
 !!!D: without spell type is missing "No spell type"
+
+!!!J: This is on purpose, since only 1.38% has a spell type, as shown just above.
 
 <br>
 
@@ -547,16 +554,13 @@ volume_top %>%
     limits = c(0, 200* 10^6), 
     expand = c(0,0)
     ) +
-  labs(x = "", title = "Long tail", fill = "") + 
-  annotate("text", x = 9800, y = 75*10^6, label = "Remaining 99.9967%") + 
-  geom_segment(aes(x = 8900, y = 35*10^6, xend = 11500, yend = 35*10^6),
+  labs(x = "", title = "Most searches have low volume", fill = "") + 
+  annotate("text", x = 8800, y = 75*10^6, label = "Remaining 99.9967%") + 
+  geom_segment(aes(x = 7900, y = 35*10^6, xend = 10000, yend = 35*10^6),
                arrow = arrow(length = unit(0.5, "cm"))) +
-  scale_x_continuous(expand = c(0,0), limits = c(0, 11500)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 10000)) +
   ggeasy::easy_remove_axes(which = "x", what = "text")
 ```
-
-!!!J: Better title
-
 
 <br>
 
@@ -585,15 +589,10 @@ df %>%
   ggplot(aes(x = reorder(cat, desc(count)), y = count)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
   theme_light() +
-  labs(x = "Search phrase length", y = "Percentage of all searches", title = "Long tail") +
+  labs(x = "Volume", y = "Percentage of all searches", title = "Most searches have low volume") +
   scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0,0))
            
 ```
-
-!!!J: Better title
-
-
-!!!D: x-label is meant to say search volume instead of keyword length, right?  
 
 <br>
 
@@ -692,15 +691,12 @@ df %>%
 !!!D: Maybe a boxplot or something similiar would make more sense here? Or something like that: https://tinyurl.com/yxfwo5vt Leave that out if it´s too complicated to implement.  
 
 
-
-Median:
-
 ```{r}
-write_categories_medians <- function()
+write_categories_volume <- function()
 {
-  get_category_median <-  function(id){
+  get_category_volume <-  function(id){
     sql <- glue(
-      "SELECT approx_quantiles(keyword_info_search_volume, 2)[offset(1)] AS median_volume, approx_quantiles(keyword_info_cpc, 2)[offset(1)] AS median_cpc
+      "SELECT SUM(keyword_info_search_volume) / 10000 as volume
        FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
        WHERE location = 2840 
        AND keyword_info_search_volume > 0
@@ -708,29 +704,64 @@ write_categories_medians <- function()
     tb <- bq_project_query("dataforseo-bigquery", sql)
     bq_table_download(tb) %>% mutate(id = id)
   }
-  df <- map_df(toplevel$id, get_category_median)  
+  df <- map_df(toplevel$id, get_category_volume) %>% 
+    mutate(volume = volume * 10000)
   
   df %>% left_join(toplevel %>% select(id, cat1), by = "id") %>% 
-    write_csv("../proc_data/categories_medians.csv")
+    write_csv("../proc_data/categories_total_volume.csv")
 }
-#write_categories_medians()
-df <- read_csv("../proc_data/categories_medians.csv")
+write_categories_volume()
+df <- read_csv("../proc_data/categories_total_volume.csv")
 ```
-
-!!!D: The info_keyword category is an interesting variable. May be we can add a plot on the total search volume by category? Fro ma practical standpoint is pretty useless, but a general overview would provide a great insight. What do you think? Any other ideas? 
 
 <br>
 
-```{r cpc_category, fig.height = 6, fig.width = 7}
+```{r search_category, fig.height = 6, fig.width = 7}
 df %>% 
-  ggplot(aes(x = fct_rev(cat1), y = median_cpc)) +
+  mutate(volume = volume / sum(volume)) %>% 
+  ggplot(aes(x = fct_rev(cat1), y = volume)) +
+  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
+  theme_light() +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 0.25), expand = c(0,0), labels = scales::percent) +
+  labs(x = "", y = "", title = "Total search volume by category")
+```
+
+<br>
+
+```{r}
+write_categories <- function()
+{
+  get_category <-  function(id){
+    sql <- glue(
+      "SELECT AVG(keyword_info_cpc) as mean_cpc
+       FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+       WHERE location = 2840 
+       AND keyword_info_search_volume > 0
+       AND keyword_info_categories like '%{id}%' ")
+    tb <- bq_project_query("dataforseo-bigquery", sql)
+    bq_table_download(tb) %>% mutate(id = id)
+  }
+  df <- map_df(toplevel$id, get_category)  
+  
+  df %>% left_join(toplevel %>% select(id, cat1), by = "id") %>% 
+    write_csv("../proc_data/categories_cpc.csv")
+}
+write_categories()
+df <- read_csv("../proc_data/categories_cpc.csv")
+```
+
+<br>
+
+```{r search_category, fig.height = 6, fig.width = 7}
+df %>% 
+  ggplot(aes(x = fct_rev(cat1), y = mean_cpc)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
   theme_light() +
   coord_flip() +
   scale_y_continuous(limits = c(0, 2), expand = c(0,0)) +
-  labs(x = "", y = "", title = "CPC median by category")
+  labs(x = "", y = "", title = "Mean CPC by category")
 ```
-
 
 <br>
 
@@ -779,6 +810,7 @@ df <- bind_rows(
 
 df %>% group_by(type) %>% 
   summarise(prop = sum(n) / total_count) %>% 
+  mutate(type = str_to_title(type)) %>% 
   ggplot(aes(x = type, y = prop)) +
   geom_bar(stat = "identity", width = 0.8, fill = "turquoise4", color = "black") +
   scale_y_continuous(labels = scales::percent, limits = c(0, 0.13), expand = c(0,0)) +
