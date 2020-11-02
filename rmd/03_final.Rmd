@@ -1,7 +1,9 @@
 ---
 title: "Keyword Landscape Analysis"
-author: ""
-date: "Last update: `r Sys.Date()`"
+author: 
+- "Lead: Brian Dean ([backlinko.com](https://backlinko.com/))"
+- "Support: FrontPage Data ([frontpagedata.com](https://frontpagedata.com/))"
+date: "Last updated on `r Sys.Date()`"
 output:
   html_document:
     theme: paper
@@ -66,13 +68,13 @@ library(gt)
 <br>
 
 # 1 Introduction 
-filled out by Daniel
+
 
 <br>
 <br>
 
 # 2 Methodology
-partly filled out by Daniel;
+
 
 <br>
 
@@ -112,18 +114,20 @@ knitr::kable(tbl, caption = "Overview")
 
 <br>
 
-## Questions in searches
+## 3.1 Questions in searches
 
-~14% of searches are in the form of a question. "how" is the most common question word
+~14% of searches are in the form of a question. "how" is the most common question word.
 
 ```{r questions_count, echo=FALSE}
 knitr::include_graphics(here::here("plots", "questions_count-1.png"))
 ```
 
+!!!D: please include the questiony by volume
+
 <br>
 <br>
 
-## Stopwords
+## 3.2 Stopwords
 
 "how" and "the" are the most common stopwords, which are present in 6-8% of searches.
 
@@ -134,7 +138,7 @@ knitr::include_graphics(here::here("plots", "stopwords_wordcloud-1.png"))
 <br>
 <br>
 
-## Keyword length
+## 3.3. Keyword length
 
 The most searched queries have length 6-9 characters, and falls continuously for search queries longer or shorter than that.
 
@@ -145,21 +149,21 @@ knitr::include_graphics(here::here("plots", "keyword_length_volume-1.png"))
 <br>
 <br>
 
-## Keyword info categories
+## 3.4 Keyword info categories
 
-Internet & Telecom is the keyword category with the highest mean volume
+Internet & Telecom is the keyword category with the highest mean volume.
 
 ```{r search_category_mean_volume, echo=FALSE}
 knitr::include_graphics(here::here("plots", "search_category_volume_mean-1.png"))
 ```
 
-Arts & Entertainment, Internet & Telecom, and News, Media & Publications have the highest total volume
+Arts & Entertainment, Internet & Telecom, and News, Media & Publications have the highest total volume.
 
 ```{r search_category_total_volume, echo=FALSE}
 knitr::include_graphics(here::here("plots", "search_category_total_volume-1.png"))
 ```
 
-Finance has the highest mean cost per click
+Finance has the highest mean cost per click.
 
 ```{r search_category_cpc, echo=FALSE}
 knitr::include_graphics(here::here("plots", "search_category_cpc_mean-1.png"))
@@ -168,7 +172,10 @@ knitr::include_graphics(here::here("plots", "search_category_cpc_mean-1.png"))
 <br>
 <br>
 
-## Keyword difficulty
+## 3.5 Keyword difficulty
+
+
+!!!D: read your comments. Let´s got with the violin plots here. 
 
 As volume increases, the difficulty increases.
 
@@ -189,7 +196,7 @@ knitr::include_graphics(here::here("plots", "difficulty_cpc_scatter-1.png"))
 <br>
 <br>
 
-## spell types
+## 3.6 Spell types
 
 Most of the searches with the highest volumes are attempts to go to a popular website.
 
@@ -212,7 +219,7 @@ knitr::kable(title_description_table, caption = "Top 10 intended searches that a
 <br>
 <br>
 
-## Search volume
+## 3.7 Search volume
 
 The top 2000 searches have extremely high volume, while the vast majority of the rest of the searches are very low volume.
 
@@ -230,7 +237,7 @@ Note that many of these extremely high volume searches are not a search for some
 <br>
 
 
-## SERP features
+## 3.8 SERP features
 
 (Note there are (at least) two additional SERP feature types (*Knowledge Panel* and *Videos*), for which the sample size is too small to include.)
 
@@ -274,7 +281,7 @@ knitr::include_graphics(here::here("plots", "serp_difficulty_n-1.png"))
 <br>
 <br>
 
-## Return rate
+## 3.9 Return rate
 
 We can see that searches with high return rates tend to have lower difficulty, and to be clicked on a lot more.
 
@@ -287,7 +294,7 @@ knitr::kable(title_description_table, caption = "Comparison of searches with sam
 <br>
 
 
-## International searches
+## 3.10 International searches
 
 International searches have overall higher volume
 
