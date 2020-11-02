@@ -543,6 +543,22 @@ dff %>%
   labs(y = "SERP feature", title = "SERP features and cps")
 ```
 
+```{r serp_volume_ridge}
+order <- dff %>% 
+  group_by(serp_features) %>%
+  summarise(mean_volume = mean(volume, na.rm = T)) %>% 
+  arrange(mean_volume) %>% 
+  pull(serp_features)
+
+  
+dff %>% 
+  mutate(serp_features = factor(serp_features, levels = order)) %>% 
+  ggplot(aes(y = serp_features, x = volume)) +
+  scale_x_log10(labels = comma) +
+  stat_density_ridges(fill = "turquoise4", color = "black") +
+  labs(y = "SERP feature", title = "SERP features and cps")
+```
+
 
 Low difficulty keywords have fewer SERP features 
 
@@ -560,7 +576,7 @@ rdffn %>% group_by(n_serp) %>%
   summarise(difficulty = mean(difficulty, na.rm = T)) %>% 
   ggplot(aes(x = n_serp, y = difficulty)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
-  labs(x = "SERP features", title = "Number of SERP features and mean clicks", y = "Difficulty")
+  labs(x = "SERP features", title = "Number of SERP features and mean difficulty", y = "Difficulty")
 ```
 
 ```{r serp_pairs}
@@ -632,7 +648,7 @@ dfv <-
     )
 ```
 
-International searches have much more total volume:
+In *ahref*, international volume is higher:
 
 ```{r}
 dfv %>% group_by(region) %>% 
@@ -640,6 +656,17 @@ dfv %>% group_by(region) %>%
   mutate(volume = scales::percent(volume / sum(volume))) %>% 
   pander()
 ```
+
+However, in the original data set, US volume is much higher:
+
+
+```{r}
+tribble(~region, ~volume,
+        "US", "82%",
+        "International", "19%")
+```
+
+I will be going by *ahref* in the following.
 
 Internationally there are more searches with very low volume, while US has more searches with medium volume.
 
@@ -706,12 +733,14 @@ We can see that they mostly follow each other, but there are some searches with 
 Higher volume internationally:
 
 ```{r}
-df_int %>% 
+tbl <- df_int %>% 
   arrange(desc(volume_diff)) %>% 
   filter(volume != 60) %>% 
   select(keyword, us_volume = volume, international_volume) %>% 
-  head(5) %>% 
-  pander()
+  head(5)
+
+tbl %>% write_csv("../plots/csv/table_int.csv")
+tbl %>% pander()
 ```
 
 <br>
@@ -719,11 +748,13 @@ df_int %>%
 Higher volume in US:
 
 ```{r}
-df_int %>% 
+tbl <- df_int %>% 
   arrange(volume_diff) %>% 
   select(keyword, us_volume = volume, international_volume) %>% 
-  head(5) %>% 
-  pander()
+  head(5)
+
+tbl %>% write_csv("../plots/csv/table_us.csv")
+tbl %>% pander()
 ```
 
 <br>
@@ -821,7 +852,7 @@ Note that this is in sample, so the lowest part of the distribution is not inclu
 Comparison of searches with same volume but different return rates:
 
 ```{r}
-bind_rows(
+tbl <- bind_rows(
   df %>% filter(return_rate > 10) %>% 
     summarise(mean_cpc = mean(cpc, na.rm = T), mean_clicks = mean(clicks, na.rm = T), mean_cpc = mean(cps, na.rm = T), mean_difficulty = mean(difficulty, na.rm = T)) %>% 
     mutate(return_rate = "very high") %>% relocate(return_rate),
@@ -832,7 +863,12 @@ bind_rows(
     distinct(number, volume, cat, .keep_all = T) %>% 
     summarise(mean_cpc = mean(cpc, na.rm = T), mean_clicks = mean(clicks, na.rm = T), mean_cpc = mean(cps, na.rm = T), mean_difficulty = mean(difficulty, na.rm = T)) %>% 
     mutate(return_rate = "low") %>% relocate(return_rate)
-) %>% pander()
+)
+
+tbl %<>% mutate(mean_cpc = round(mean_cpc, 2), mean_clicks = round(mean_clicks, 0), mean_difficulty = round(mean_difficulty, 1))
+               
+tbl %>% write_csv("../plots/csv/return_rate.csv")
+tbl %>% pander()
 ```
 
 We can see that searches with high return rates tend to have lower difficulty, and to be clicked on a lot more.

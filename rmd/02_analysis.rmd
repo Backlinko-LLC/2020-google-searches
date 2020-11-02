@@ -231,12 +231,6 @@ FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
 WHERE location = 2840
 ```
 
-```{sql, connection = con, output.var = "sql"}
-SELECT SUM(COALESCE(keyword_info_search_volume / 10000, 0)) AS total_volume
-FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
-WHERE location <> 2840
-```
-
 
 ```{r}
 # Calculated in a roundabout way to avoid integer overflow

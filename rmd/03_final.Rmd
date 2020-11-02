@@ -78,14 +78,14 @@ partly filled out by Daniel;
 
 #### Data preparation
 
-Searches with volume 0 are removed from the data set. For AHREF analysis, only searches with volume > 100 are looked at. Analyses are based on US location.
+Searches with volume 0 are removed from the data set. For *ahref* analysis, only searches with volume > 100 are looked at. Analyses are based on US location.
 
 <br>
 <br>
 
 ##### Data enrichment
 
-~2.5 million searches were enriched with AHREF. This includes the statistics difficulty, return rate, clicks, click per search (cps), region volume, and SERP features.
+~2.5 million searches were enriched with *ahref*. This includes the statistics difficulty, return rate, clicks, region volume, and SERP features.
 
 <br>
 <br>
@@ -203,10 +203,9 @@ knitr::kable(title_description_table, caption = "Searches with highest volume")
 As a result about half of all volume has a spell type. Although only ~1.4% of searches have a spell type.
 
 
-The most popular websites that are redirected from misspelling:
-
 ```{r misspell, echo=FALSE}
-title_description_table <- read.csv(here::here("plots", "csv", "misspell.csv"), stringsAsFactors=F)
+title_description_table <- read.csv(here::here("plots", "csv", "misspell.csv"), stringsAsFactors=F) %>% 
+  mutate(site = spell)
 knitr::kable(title_description_table, caption = "Top 10 intended searches that are misspelled")
 ```
 
@@ -215,7 +214,7 @@ knitr::kable(title_description_table, caption = "Top 10 intended searches that a
 
 ## Search volume
 
-The top 2000 searches have extremely high volume, while the vast majority of the rest of the searches is very low volume.
+The top 2000 searches have extremely high volume, while the vast majority of the rest of the searches are very low volume.
 
 ```{r search_tails, echo=FALSE}
 knitr::include_graphics(here::here("plots", "search_tails-1.png"))
@@ -247,7 +246,7 @@ The knowledge card has a huge effect in reducing the clicks-per-search, while th
 knitr::include_graphics(here::here("plots", "serp_cps-1.png"))
 ```
 
-Low difficulty keywords have fewer SERP features
+Easy keywords have fewer SERP features
 
 ```{r serp_difficulty_boxplot, echo=FALSE}
 knitr::include_graphics(here::here("plots", "serp_difficulty_boxplot-1.png"))
@@ -261,9 +260,16 @@ knitr::include_graphics(here::here("plots", "serp_pairs-1.png"))
 
 Searches without SERP features tend to be low volume
 
-```{r serp_volume, echo=FALSE}
-knitr::include_graphics(here::here("plots", "serp_volume-1.png"))
+```{r serp_volume_ridge, echo=FALSE}
+knitr::include_graphics(here::here("plots", "serp_volume_ridge-1.png"))
 ```
+
+Searches with more SERP features have higher mean difficulty
+
+```{r serp_difficulty_n, echo=FALSE}
+knitr::include_graphics(here::here("plots", "serp_difficulty_n-1.png"))
+```
+
 
 <br>
 <br>
@@ -277,16 +283,71 @@ title_description_table <- read.csv(here::here("plots", "csv", "return_rate.csv"
 knitr::kable(title_description_table, caption = "Comparison of searches with same volume but different return rates")
 ```
 
+<br>
+<br>
+
+
+## International searches
+
+International searches have overall higher volume
+
+```{r}
+tribble(~region, ~volume,
+        "US", "33%",
+        "International", "67%")
+```
+
+[Note, this doesn't concur with the volume in the main data set. Not sure what is going on here.]
+
+
+Internationally there are more searches with very low volume, while US has more searches with medium volume.
+
+```{r comparison_count, echo=FALSE}
+knitr::include_graphics(here::here("plots", "comparison_count-1.png"))
+```
+
+There is not a large difference in the number of searches with very high volume. However, the total volume of these searches is a lot higher internationally
+
+```{r comparison_volume, echo=FALSE}
+knitr::include_graphics(here::here("plots", "comparison_volume-1.png"))
+```
+
+Searches that have high US volume tend to have high international volume, and vice versa. But there are some exceptions.
+
+```{r international_v_us_volume, echo=FALSE}
+knitr::include_graphics(here::here("plots", "international_v_us_volume-1.png"))
+```
+
+```{r tbl_int, echo=FALSE}
+title_description_table <- read.csv(here::here("plots", "csv", "table_int.csv"), stringsAsFactors=F)
+knitr::kable(title_description_table, caption = "Searches that have much higher volume internationally")
+```
+
+```{r tbl_us, echo=FALSE}
+title_description_table <- read.csv(here::here("plots", "csv", "table_us.csv"), stringsAsFactors=F)
+knitr::kable(title_description_table, caption = "Searches that have much higher volume in the US")
+```
 
 
 
-`
+Searches that have higher volume in US have a higher click-per-search on average than searches that have higher volume internationally.
+
+```{r international_cps, echo=FALSE}
+knitr::include_graphics(here::here("plots", "international_cps-1.png"))
+```
+
+They also have a higher cost-per-click on average
+
+```{r international_cpc, echo=FALSE}
+knitr::include_graphics(here::here("plots", "international_cpc-1.png"))
+```
 
 
+Searches that have higher volume internationally, tend to have higher difficulty
 
-
-
-
+```{r international_difficulty, echo=FALSE}
+knitr::include_graphics(here::here("plots", "international_difficulty-1.png"))
+```
 
 
 
