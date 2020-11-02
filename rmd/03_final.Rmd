@@ -122,7 +122,7 @@ knitr::kable(tbl, caption = "Overview")
 knitr::include_graphics(here::here("plots", "questions_count-1.png"))
 ```
 
-!!!D: please include the questiony by volume
+!!!D: please include the question by volume plot
 
 <br>
 <br>
@@ -183,7 +183,7 @@ As volume increases, the difficulty increases.
 knitr::include_graphics(here::here("plots", "difficulty_volume_sample-1.png"))
 ```
 
-From linear regression we find that for each doubling of the volume, the difficulty increases by 1.63
+From linear regression we find that for each doubling of the volume, the difficulty increases by 1.63. !!!D: Please provide a simple example. 
 
 <br>
 
@@ -192,6 +192,8 @@ Difficulty and CPC are also correlated:
 ```{r difficulty_cpc_scatter, echo=FALSE}
 knitr::include_graphics(here::here("plots", "difficulty_cpc_scatter-1.png"))
 ```
+
+!!!D: please add a correlation coefficient here as well. 
 
 <br>
 <br>
@@ -253,25 +255,25 @@ The knowledge card has a huge effect in reducing the clicks-per-search, while th
 knitr::include_graphics(here::here("plots", "serp_cps-1.png"))
 ```
 
-Easy keywords have fewer SERP features
+Easy keywords have fewer SERP features.
 
 ```{r serp_difficulty_boxplot, echo=FALSE}
 knitr::include_graphics(here::here("plots", "serp_difficulty_boxplot-1.png"))
 ```
 
-Thumbnail & Top stories is the most common SERP feature pairing
+Thumbnail & Top stories is the most common SERP feature pairing.
 
 ```{r serp_pairs, echo=FALSE}
 knitr::include_graphics(here::here("plots", "serp_pairs-1.png"))
 ```
 
-Searches without SERP features tend to be low volume
+Searches without SERP features tend to be low volume.
 
 ```{r serp_volume_ridge, echo=FALSE}
 knitr::include_graphics(here::here("plots", "serp_volume_ridge-1.png"))
 ```
 
-Searches with more SERP features have higher mean difficulty
+Searches with more SERP features have higher mean difficulty.
 
 ```{r serp_difficulty_n, echo=FALSE}
 knitr::include_graphics(here::here("plots", "serp_difficulty_n-1.png"))
