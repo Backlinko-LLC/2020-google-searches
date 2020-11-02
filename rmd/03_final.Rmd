@@ -122,7 +122,11 @@ knitr::kable(tbl, caption = "Overview")
 knitr::include_graphics(here::here("plots", "questions_count-1.png"))
 ```
 
-!!!D: please include the question by volume plot
+Although only about 1% of the total volume of searches are questions
+
+```{r questions_volume, echo=FALSE}
+knitr::include_graphics(here::here("plots", "questions_volume-1.png"))
+```
 
 <br>
 <br>
@@ -175,25 +179,23 @@ knitr::include_graphics(here::here("plots", "search_category_cpc_mean-1.png"))
 ## 3.5 Keyword difficulty
 
 
-!!!D: read your comments. Let´s got with the violin plots here. 
-
 As volume increases, the difficulty increases.
 
 ```{r difficulty_volume_sample, echo=FALSE}
 knitr::include_graphics(here::here("plots", "difficulty_volume_sample-1.png"))
 ```
 
-From linear regression we find that for each doubling of the volume, the difficulty increases by 1.63. !!!D: Please provide a simple example. 
+The slope of the linear regression line is such that for each doubling of the volume, the difficulty increases by 1.63. For example, as the volume goes from 100 to 3200 (6 doublings), the difficulty increases by roughly 1.63 * 6 ~= 10. 
 
 <br>
 
-Difficulty and CPC are also correlated:
+Higher difficulty also means higher CPC on average. Note that the Y axis is logarithmic, so a small move on the y axis is a large increase in value. The bar in the middle indicates the median value, and it increases from 0.35 to 1.2 when going from easy to super hard difficulty.
 
-```{r difficulty_cpc_scatter, echo=FALSE}
-knitr::include_graphics(here::here("plots", "difficulty_cpc_scatter-1.png"))
+```{r difficulty_cpc_violin, echo=FALSE}
+knitr::include_graphics(here::here("plots", "difficulty_cpc_violin-1.png"))
 ```
 
-!!!D: please add a correlation coefficient here as well. 
+
 
 <br>
 <br>
@@ -301,9 +303,10 @@ knitr::kable(title_description_table, caption = "Comparison of searches with sam
 International searches have overall higher volume
 
 ```{r}
-tribble(~region, ~volume,
+df <- tribble(~region, ~volume,
         "US", "33%",
         "International", "67%")
+knitr::kable(df, caption = "Total search volume")
 ```
 
 [Note, this doesn't concur with the volume in the main data set. Not sure what is going on here.]

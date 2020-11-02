@@ -60,7 +60,7 @@ extrafont::loadfonts(device = "win")
 
 ```{r prep}
 set.seed(1)
-required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander")
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2")
 for(i in required_packages) { 
   if(!require(i, character.only = T)) {
     #  if package is not existing, install then load the package
@@ -430,7 +430,7 @@ write_questions_volume <- function(){
   for (word in question_words){
     sql <- glue("SELECT sum(keyword_info_search_volume) FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
               WHERE location = 2840 
-              AND keyword like '{word} %' ")
+              AND keyword like '% {word} %' OR keyword like '{word} %' OR keyword like '% {word}'")
     tb <- bq_project_query("dataforseo-bigquery", sql)
     df <- bq_table_download(tb) 
     questions %<>% add_row(question = word, volume = df$f0_)
@@ -443,7 +443,7 @@ questions <- read_csv("../proc_data/questions_volume.csv")
 questions %>% mutate(prop = volume / total_volume) %>% 
   ggplot(aes(x = reorder(question, prop), y = prop)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
-  scale_y_continuous(labels = scales::percent, limits = c(0, 0.005), expand = c(0,0)) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.006), expand = c(0,0)) +
   labs(title = "Questions in searches - by volume", x = "", y = "")
 ```
 
@@ -463,7 +463,7 @@ write_questions_count <- function(){
   }  
   write_csv(questions, "../proc_data/questions_count.csv")
 }
-write_questions_count()
+#write_questions_count()
 questions <- read_csv("../proc_data/questions_count.csv")
 questions %>% mutate(prop = n / total_count) %>% 
   ggplot(aes(x = reorder(question, prop), y = prop)) +
@@ -523,15 +523,11 @@ stopwords %>% mutate(prop = n / total_count) %>%
 !!!D: the graph is not that insightful. Please make the wordcloud a bit more readable and visually appealing. Feel to add more than 25 words. 
 
 
-```{r stopwords_wordcloud}
-stopwords %>% 
-  mutate(stopword = ifelse(stopword == "i", "I", stopword)) %>% 
-  arrange(desc(n)) %>% 
-  head(25) %>% 
-  ggplot(aes(label = stopword, size = n, color = factor(sample.int(10, 25, replace = TRUE)))) +
-  geom_text_wordcloud() +
-  scale_size_area(max_size = 50) +
-  theme_minimal()
+
+
+```{r wordcloud}
+s2 <- stopwords %>% mutate(n = sqrt(n))
+wordcloud2(s2, size = 0.6, gridSize = 15, minSize = 10)
 ```
 
 

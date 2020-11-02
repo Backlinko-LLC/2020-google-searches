@@ -393,12 +393,11 @@ People will most likely not understand a violin chart. Alternatives? box blot?
 !!!J: In my experience people understand violin charts equally well as box charts, and I have shown them quite a few times. It is almost a box chart, with a median, and some area above and below. So I think we can keep it. If you insist, it's an easy change to make box charts instead. Although I do think they are not really needed here, since the scatter plots are good.
 
 
-
 ```{r difficulty_cpc_scatter}
 dfs %>%
   ggplot(aes(x = difficulty, y = cpc)) +
   geom_jitter(size = 0.1, alpha = 0.1, height = 0.08, width = 0.3) +
-  scale_y_log10(labels = comma) +
+  scale_y_log10(labels = c("0.01", "0.1", "1", "10", "100"), breaks = c(0.01, 0.1, 1, 10, 100)) +
   geom_smooth(method='lm', formula= y~x) +
   labs(title = "Keyword difficulty and cpc")
 ```
@@ -408,7 +407,7 @@ dfs %>%
 dfs %>% drop_na(difficulty_cat) %>% 
   ggplot(aes(y = cpc, x = difficulty_cat)) +
   geom_violin(draw_quantiles = c(0.5)) +
-  scale_y_log10(labels = comma) +
+    scale_y_log10(labels = c("0.01", "0.1", "1", "10", "100"), breaks = c(0.01, 0.1, 1, 10, 100)) +
   labs(x = "Difficulty category", title = "Keyword difficulty and cpc")
 ```
 
