@@ -60,7 +60,7 @@ extrafont::loadfonts(device = "win")
 
 ```{r prep}
 set.seed(1)
-required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2")
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords")
 for(i in required_packages) { 
   if(!require(i, character.only = T)) {
     #  if package is not existing, install then load the package
@@ -138,43 +138,18 @@ theme_flip <-
   theme(panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_line(size = .6,
                                           color = "#eaeaea"))
-## theme settings for maps
-theme_map <- 
-  theme_void(base_family = "Montserrat") +
-  theme(legend.direction = "horizontal",
-        legend.box = "horizontal",
-        legend.margin = margin(10, 10, 10, 10),
-        legend.title = element_text(size = 17, 
-                                    face = "bold"),
-        legend.text = element_text(color = "grey33",
-                                   size = 12),
-        plot.margin = margin(15, 5, 15, 5),
-        plot.title = element_text(face = "bold",
-                                  size = 20,
-                                  hjust = .5,
-                                  margin = margin(30, 0, 10, 0)),
-        plot.subtitle = element_text(face = "bold",
-                                     color = "grey33",
-                                     size = 17,
-                                     hjust = .5,
-                                     margin = margin(10, 0, -30, 0)),
-        plot.caption = element_text(size = 14,
-                                    color = "grey33",
-                                    hjust = .97,
-                                    margin = margin(-30, 0, 0, 0)))
+## theme settings for charts without y axis
+theme_blank <- 
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.line.y = element_blank(),
+        axis.text.y = element_blank())
+
 ## numeric format for labels
 num_format <- scales::format_format(big.mark = ",", small.mark = ",", scientific = F)
 ## main color backlinko
 bl_col <- "#00d188"
 bl_dark <- darken(bl_col, .3, space = "HLS")
-## colors + labels for interval stripes
-int_cols <- c("#bce2d5", "#79d8b6", bl_col, "#009f66", "#006c45", "#003925")
-int_perc <- c("100%", "95%", "75%", "50%", "25%", "5%")
-## colors for degrees (Bachelors, Massters, Doctorate in reverse order)
-cols_degree <- c("#e64500", "#FFCC00", darken(bl_col, .1))
-## gradient colors for position
-colfunc <- colorRampPalette(c(bl_col, "#bce2d5"))
-pos_cols <- colfunc(10)
 ```
 
 
@@ -442,9 +417,20 @@ questions <- read_csv("../proc_data/questions_volume.csv")
 
 questions %>% mutate(prop = volume / total_volume) %>% 
   ggplot(aes(x = reorder(question, prop), y = prop)) +
-  geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
-  scale_y_continuous(labels = scales::percent, limits = c(0, 0.006), expand = c(0,0)) +
-  labs(title = "Questions in searches - by volume", x = "", y = "")
+  geom_bar(stat = "identity", fill = bl_dark, color = "black") +
+  geom_text(aes(label = glue::glue("{format(round(prop, 4) * 100, scientific = FALSE)}%")),
+            nudge_y = .0002, family = "Montserrat", fontface = "bold", color = "grey40") +
+  scale_x_discrete(expand = c(.12, .12)) +
+  scale_y_continuous(#labels = scales::label_percent(accuracy = 1), 
+                     #breaks = seq(0, .5, by = .1),
+                     expand = c(0, 0),
+                     limits = c(0, .0054)) +
+  labs(title = "Questions in searches - by volume", x = NULL, y = NULL) +
+  theme_blank + 
+  theme(plot.title = element_text(margin = margin(b = 7))) +
+  ggsave(here::here("plots", "reworked", "questions_volume.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
+    
 ```
 
 
@@ -467,9 +453,19 @@ write_questions_count <- function(){
 questions <- read_csv("../proc_data/questions_count.csv")
 questions %>% mutate(prop = n / total_count) %>% 
   ggplot(aes(x = reorder(question, prop), y = prop)) +
-  geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
-  scale_y_continuous(labels = scales::percent, limits = c(0, 0.1), expand = c(0,0)) +
-  labs(title = "Questions in searches - by count", x = "", y = "")
+  geom_bar(stat = "identity", fill = bl_dark, color = "black") +
+  geom_text(aes(label = glue::glue("{format(round(prop, 4) * 100, scientific = FALSE)}%")),
+            nudge_y = .0025, family = "Montserrat", fontface = "bold", color = "grey40") +
+  scale_x_discrete(expand = c(.12, .12)) +
+  scale_y_continuous(#labels = scales::label_percent(accuracy = 1), 
+                     #breaks = seq(0, .5, by = .1),
+                     expand = c(0, 0),
+                     limits = c(0, .085)) +
+  labs(title = "Questions in searches - by count", x = NULL, y = NULL) +
+  theme_blank + 
+  theme(plot.title = element_text(margin = margin(b = 7))) +
+  ggsave(here::here("plots", "reworked", "questions_count.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
 ```
 
 
@@ -514,7 +510,7 @@ stopwords %>% mutate(prop = n / total_count) %>%
   ggplot(aes(x = reorder(stopword, prop), y = prop)) +
   geom_bar(stat = "identity", color = "black", fill = "turquoise4", width = 0.7) +
   scale_y_continuous(labels = scales::percent, expand = c(0,0), limits = c(0, 0.085)) +
-  labs(x = "", y = "", title = "Searches with specific stopwords") +
+  labs(x = NULL, y = NULL, title = "Searches with specific stopwords") +
   coord_flip()
 ```
 
@@ -525,9 +521,27 @@ stopwords %>% mutate(prop = n / total_count) %>%
 
 
 
-```{r wordcloud}
-s2 <- stopwords %>% mutate(n = sqrt(n))
-wordcloud2(s2, size = 0.6, gridSize = 15, minSize = 10)
+```{r wordcloud, fig.width = 10, fig.height = 7.5}
+s2 <- stopwords %>% mutate(n = sqrt(n)) %>% arrange(-n)
+
+#wordcloud2(s2, size = 0.6, gridSize = 15, minSize = 10,
+#           fontFamily = "Montserrat", color = bl_col)
+
+ggplot(s2, aes(label = stopword, size = n, color = n)) +
+    geom_text_wordcloud(
+      family = "Montserrat",
+      fontface = "bold",
+      shape = "circle",
+      grid_margin = 2.5,
+      seed = 1
+    ) +
+    #scale_color_gradient(low = "grey85", high = bl_dark) +
+    scico::scale_color_scico(palette = "batlow", direction = -1) +
+    scale_size_area(max_size = 25) +
+    theme_void()
+
+ggsave(here::here("plots", "reworked", "stopwords_cloud_colors.png"),
+       width = 10, height = 7.5)
 ```
 
 
@@ -536,7 +550,7 @@ wordcloud2(s2, size = 0.6, gridSize = 15, minSize = 10)
 # Search tails
 
 
-```{r search_tails}
+```{r search_tails, fig.width = 10, fig.height = 6}
 volume_top <- top %>%  
   add_rownames() %>% 
   mutate(rowname = as.numeric(rowname)) %>% 
@@ -557,14 +571,17 @@ volume_top %>%
     labels = glue("{ylab} M"),
     breaks = 10^6 * ylab,
     limits = c(0, 200* 10^6), 
-    expand = c(0,0)
+    expand = c(.001, .001)
     ) +
-  labs(x = "", title = "Volume of searches", fill = "") + 
-  annotate("text", x = 7800, y = 75*10^6, label = "Remaining 99.9967%") + 
-  geom_segment(aes(x = 7900, y = 35*10^6, xend = 10000, yend = 35*10^6),
-               arrow = arrow(length = unit(0.5, "cm"))) +
-  scale_x_continuous(expand = c(0,0), limits = c(0, 10000)) +
-  ggeasy::easy_remove_axes(which = "x", what = "text")
+  labs(x = NULL, title = "Volume of searches", fill = "") + 
+  annotate("text", x = 9000, y = 65*10^6, label = "Remaining\n99.9967%", family = "Montserrat") + 
+  geom_segment(aes(x = 7900, y = 42*10^6, xend = 10000, yend = 42*10^6),
+               arrow = arrow(length = unit(0.35, "cm"), type = "closed")) +
+  scale_x_continuous(expand = c(.001, .001), limits = c(0, 10000)) +
+  scale_fill_manual(values = c(bl_dark, bl_col, "grey75")) +
+  theme(axis.text.x = element_blank()) +
+  ggsave(here::here("plots", "reworked", "volume_by_searches.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
 ```
 
 <br>
@@ -592,11 +609,14 @@ df <- tribble(
 df %>% 
   mutate(count = count / sum(count)) %>% 
   ggplot(aes(x = reorder(cat, desc(count)), y = count)) +
-  geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
-  theme_light() +
+  geom_bar(stat = "identity", fill = bl_dark, color = "black", width = .85) +
+  geom_text(aes(label = glue::glue("{format(round(count, 4) * 100, scientific = FALSE)}%")),
+            nudge_y = .025, family = "Montserrat", fontface = "bold", color = "grey40", size = 3) +
+  theme(panel.grid.major.x = element_blank()) +
   labs(x = "Volume", y = "Percentage of all searches", title = "Volume of searches") +
-  scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0,0))
-           
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(.01, .01)) +
+  ggsave(here::here("plots", "reworked", "volume_percentage.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
 ```
 
 <br>
@@ -626,14 +646,18 @@ write_length_volume <- function()
 ```
 
 
-```{r keyword_length_volume}
+```{r keyword_length_volume, fig.width = 10, fig.height = 6}
 df <- read_csv("../proc_data/keyword_length_volume.csv")
 df %>% mutate(prop = volume / sum(volume)) %>% 
   ggplot(aes(x = length, y = prop)) +
-  geom_line(color = "turquoise4", size = 1) + geom_point(color = "turquoise4") +
-  theme_light() +
+  geom_line(color = colorspace::desaturate(bl_col, .35), size = 1) + 
+  geom_point(color = bl_dark, size = 2.5) +
+  scale_x_continuous(expand = c(.001, .001)) +
+  scale_y_continuous(labels = scales::label_percent(accuracy = 1), breaks = seq(0, .14, by = .02)) +
   labs(x = "Keyword length", y = "Total search volume", title = "Search volume by keyword length") +
-  scale_y_continuous(labels = scales::percent)
+  theme(panel.grid.minor.x = element_blank()) +
+  ggsave(here::here("plots", "reworked", "volume_keywordlength.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
 ```
 The most searched queries have length 6-9 characters, and falls continuously for search queries longer or shorter than that.
 
@@ -679,14 +703,28 @@ df <- read_csv("../proc_data/categories_averages.csv")
 ```
 
 
-```{r search_category_volume_mean, fig.height = 6, fig.width = 7}
+```{r search_category_volume_mean, fig.height = 10, fig.width = 7.5}
 df %>% 
   ggplot(aes(x = fct_rev(cat1), y = mean_volume)) +
-  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
-  theme_light() +
-  coord_flip() +
-  scale_y_continuous(limits = c(0, 9000), expand = c(0,0)) +
-  labs(x = "", y = "", title = "Search volume mean by category")
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  coord_flip() + 
+  theme_flip +
+  theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
+  scale_y_continuous(limits = c(0, 9000), expand = c(0,0), breaks = seq(0, 8000, by = 2000)) +
+  labs(x = NULL, y = NULL, title = "Search volume mean by category") +
+  ggsave(here::here("plots", "reworked", "volume_category.pdf"),
+         width = 10, height = 7.5, device = cairo_pdf)
+
+df %>% 
+  ggplot(aes(x = fct_reorder(cat1, mean_volume), y = mean_volume)) +
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  coord_flip() + 
+  theme_flip +
+  theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
+  scale_y_continuous(limits = c(0, 9000), expand = c(0,0), breaks = seq(0, 8000, by = 2000)) +
+  labs(x = NULL, y = NULL, title = "Search volume mean by category") +
+  ggsave(here::here("plots", "reworked", "volume_category_ordered.pdf"),
+         width = 10, height = 7.5, device = cairo_pdf)
 ```
 
 !!!D: I would be curious to see the same graph with median. Wouldn´t it be better to use median given the skewed data set? 
@@ -721,15 +759,30 @@ df <- read_csv("../proc_data/categories_total_volume.csv")
 
 <br>
 
-```{r search_category_total_volume, fig.height = 6, fig.width = 7}
+```{r search_category_total_volume, fig.height = 10, fig.width = 7.5}
 df %>% 
   mutate(volume = volume / sum(volume)) %>% 
   ggplot(aes(x = fct_rev(cat1), y = volume)) +
-  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
-  theme_light() +
-  coord_flip() +
-  scale_y_continuous(limits = c(0, 0.25), expand = c(0,0), labels = scales::percent) +
-  labs(x = "", y = "", title = "Total search volume by category")
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  coord_flip() + 
+  theme_flip +
+  theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
+  scale_y_continuous(limits = c(0, .2), expand = c(0,0)) +
+  labs(x = NULL, y = NULL, title = "Total search volume by category") +
+  ggsave(here::here("plots", "reworked", "volume_total_category.pdf"),
+         width = 10, height = 7.5, device = cairo_pdf)
+
+df %>% 
+  mutate(volume = volume / sum(volume)) %>% 
+  ggplot(aes(x = fct_reorder(cat1, volume), y = volume)) +
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  coord_flip() + 
+  theme_flip +
+  theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
+  scale_y_continuous(limits = c(0, .2), expand = c(0,0)) +
+  labs(x = NULL, y = NULL, title = "Total search volume by category") +
+  ggsave(here::here("plots", "reworked", "volume_total_category_ordered.pdf"),
+         width = 10, height = 7.5, device = cairo_pdf)
 ```
 
 <br>
@@ -758,14 +811,28 @@ df <- read_csv("../proc_data/categories_cpc.csv")
 
 <br>
 
-```{r search_category_cpc_mean, fig.height = 6, fig.width = 7}
+```{r search_category_cpc_mean, fig.height = 10, fig.width = 6.5}
 df %>% 
   ggplot(aes(x = fct_rev(cat1), y = mean_cpc)) +
-  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
-  theme_light() +
-  coord_flip() +
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  coord_flip() + 
+  theme_flip +
+  theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
   scale_y_continuous(limits = c(0, 2), expand = c(0,0)) +
-  labs(x = "", y = "", title = "Mean CPC by category")
+  labs(x = NULL, y = NULL, title = "Mean CPC by category") +
+  ggsave(here::here("plots", "reworked", "cpc_mean_category.pdf"),
+         width = 10, height = 6.5, device = cairo_pdf)
+
+df %>% 
+  ggplot(aes(x = fct_reorder(cat1, mean_cpc), y = mean_cpc)) +
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  coord_flip() + 
+  theme_flip +
+  theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
+  scale_y_continuous(limits = c(0, 2), expand = c(0,0)) +
+  labs(x = NULL, y = NULL, title = "Mean CPC by category") +
+  ggsave(here::here("plots", "reworked", "cpc_mean_category_ordered.pdf"),
+         width = 10, height = 6.5, device = cairo_pdf)
 ```
 
 <br>
@@ -819,7 +886,7 @@ df %>% group_by(type) %>%
   ggplot(aes(x = type, y = prop)) +
   geom_bar(stat = "identity", width = 0.8, fill = "turquoise4", color = "black") +
   scale_y_continuous(labels = scales::percent, limits = c(0, 0.13), expand = c(0,0)) +
-  labs("Keyword type", y = "", x = "")
+  labs("Keyword type", y = NULL, x = NULL)
 
 ```
 
@@ -931,19 +998,15 @@ Chevron
 GUCCI
 Dell Technologies
 
-                        
-                    
+   
+***
 
+<details><summary>Session Info</summary>
 
+```{r sessionInfo}
+Sys.time()
+git2r::repository()
+sessionInfo()
+```
 
-
-
-
-
-
-
-
-
-
-
-
+</details>

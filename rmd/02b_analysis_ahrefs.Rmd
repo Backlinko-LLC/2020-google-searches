@@ -80,8 +80,6 @@ dpi <- 750
 ## theme updates; please adjust to client´s website
 #theme_set(ggthemes::theme_clean(base_size = 15))
 theme_set(ggthemes::theme_clean(base_size = 15))
-
-
 theme_update(plot.margin = margin(30, 30, 30, 30),
              plot.background = element_rect(color = "white",
                                             fill = "white"),
@@ -124,11 +122,11 @@ theme_update(plot.margin = margin(30, 30, 30, 30),
              panel.spacing.x = unit(4, "lines"),
              panel.spacing.y = unit(2, "lines"),
              legend.position = "top",
-             legend.title = element_text(
+             legend.title = element_text(family = "Montserrat",
                                          color = "black",
                                          size = 14,
                                          margin = margin(5, 0, 5, 0)),
-             legend.text = element_text(
+             legend.text = element_text(family = "Montserrat",
                                         color = "black",
                                         size = 11,
                                         margin = margin(4.5, 4.5, 4.5, 4.5)),
@@ -141,55 +139,23 @@ theme_update(plot.margin = margin(30, 30, 30, 30),
              #legend.margin = margin(0, 0, 10, 0),
              strip.text = element_text(face = "bold",
                                        margin = margin(b = 10)))
-
 ## theme settings for flipped plots
 theme_flip <-
   theme(panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_line(size = .6,
                                           color = "#eaeaea"))
-
-## theme settings for maps
-theme_map <- 
-  theme_void() +
-  theme(legend.direction = "horizontal",
-        legend.box = "horizontal",
-        legend.margin = margin(10, 10, 10, 10),
-        legend.title = element_text(size = 17, 
-                                    face = "bold"),
-        legend.text = element_text(color = "grey33",
-                                   size = 12),
-        plot.margin = margin(15, 5, 15, 5),
-        plot.title = element_text(face = "bold",
-                                  size = 20,
-                                  hjust = .5,
-                                  margin = margin(30, 0, 10, 0)),
-        plot.subtitle = element_text(face = "bold",
-                                     color = "grey33",
-                                     size = 17,
-                                     hjust = .5,
-                                     margin = margin(10, 0, -30, 0)),
-        plot.caption = element_text(size = 14,
-                                    color = "grey33",
-                                    hjust = .97,
-                                    margin = margin(-30, 0, 0, 0)))
+## theme settings for charts without y axis
+theme_blank <- 
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.line.y = element_blank(),
+        axis.text.y = element_blank())
 
 ## numeric format for labels
 num_format <- scales::format_format(big.mark = ",", small.mark = ",", scientific = F)
-
 ## main color backlinko
 bl_col <- "#00d188"
 bl_dark <- darken(bl_col, .3, space = "HLS")
-
-## colors + labels for interval stripes
-int_cols <- c("#bce2d5", "#79d8b6", bl_col, "#009f66", "#006c45", "#003925")
-int_perc <- c("100%", "95%", "75%", "50%", "25%", "5%")
-
-## colors for degrees (Bachelors, Massters, Doctorate in reverse order)
-cols_degree <- c("#e64500", "#FFCC00", darken(bl_col, .1))
-
-## gradient colors for position
-colfunc <- colorRampPalette(c(bl_col, "#bce2d5"))
-pos_cols <- colfunc(10)
 ```
 
 
@@ -365,12 +331,13 @@ tribble(~Mean, ~Median,
 ```{r difficulty_volume_sample}
 dfs %>%
   ggplot(aes(x = volume, y = difficulty)) +
-  geom_jitter(size = 0.1, alpha = 0.1, height = 0.08, width = 0.3) +
-  scale_x_log10(labels = comma) +
-  geom_smooth(method='lm', formula= y~x) +
-  labs(title = "Keyword difficulty and volume")
-
-
+  geom_jitter(size = 0.1, alpha = 0.25, height = 0.08, width = 0.3, color = "grey20") +
+  scale_x_log10(labels = comma, breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000)) +
+  geom_smooth(method='lm', formula= y~x, color = bl_col) +
+  theme(panel.grid.minor.x = element_blank()) +
+  labs(title = "Keyword difficulty and volume", x = "Search volume", y = "Difficulty") +
+  ggsave(here::here("plots", "reworked", "volume_difficulty.pdf"),
+         width = 10, height = 7, device = cairo_pdf)
 ```
 
 For each doubling of volume, the difficulty increases by 1.63:
@@ -383,7 +350,7 @@ lm1 %>% summary()
 ```{r difficulty_volume_violin_sample}
 dfs %>% drop_na(difficulty_cat) %>% 
   ggplot(aes(y = volume, x = difficulty_cat)) +
-  geom_violin(draw_quantiles = c(0.5)) +
+  geom_violin(draw_quantiles = c(0.5), color = bl_dark) +
   scale_y_log10(labels = comma) +
   labs(x = "Difficulty category", title = "Keyword difficulty and volume")
 ```
@@ -406,9 +373,25 @@ dfs %>%
 ```{r difficulty_cpc_violin}
 dfs %>% drop_na(difficulty_cat) %>% 
   ggplot(aes(y = cpc, x = difficulty_cat)) +
-  geom_violin(draw_quantiles = c(0.5)) +
-    scale_y_log10(labels = c("0.01", "0.1", "1", "10", "100"), breaks = c(0.01, 0.1, 1, 10, 100)) +
-  labs(x = "Difficulty category", title = "Keyword difficulty and cpc")
+  geom_violin(draw_quantiles = c(0.5), color = bl_dark, 
+              fill = colorspace::desaturate(bl_dark, .3), 
+              alpha = .4, size = .8) +
+  scale_y_log10(labels = c("0.01", "0.1", "1", "10", "100"), breaks = c(0.01, 0.1, 1, 10, 100)) +
+  theme(panel.grid.major.x = element_blank()) +
+  labs(x = "Difficulty category", y = "Cost per click", title = "Keyword difficulty and cpc") +
+  ggsave(here::here("plots", "reworked", "cpc_difficulty.pdf"),
+         width = 10, height = 7, device = cairo_pdf)
+
+dfs %>% drop_na(difficulty_cat) %>% 
+  ggplot(aes(y = cpc, x = difficulty_cat)) +
+  geom_violin(draw_quantiles = c(0.5), color = bl_dark, 
+              fill = colorspace::desaturate(bl_dark, .3), 
+              alpha = .4, size = .8, scale = "count") +
+  scale_y_log10(labels = c("0.01", "0.1", "1", "10", "100"), breaks = c(0.01, 0.1, 1, 10, 100)) +
+  theme(panel.grid.major.x = element_blank()) +
+  labs(x = "Difficulty category", y = "Cost per click", title = "Keyword difficulty and cpc") +
+  ggsave(here::here("plots", "reworked", "cpc_difficulty_true.pdf"),
+         width = 10, height = 7, device = cairo_pdf)
 ```
 
 
@@ -452,14 +435,20 @@ dffn <- left_join(dffn, dfs, by = "keyword")
 In sample:
 
 
-```{r serp_presence_orig, fig.height = 5, fig.width = 7}
+```{r serp_presence_orig, fig.height = 6.5, fig.width = 10}
 dff %>% group_by(serp_features) %>% 
   summarise(prop = n() / nrow(dfs)) %>% 
   ggplot(aes(y = reorder(serp_features, prop), x = prop)) +
-  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
-  scale_x_continuous(labels = scales::percent) +
-  labs(y = "SERP feature", x = "", title = "Presence of SERP features")
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.65) +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1), expand = c(0, 0)) +
+  theme(panel.grid.minor.x = element_blank(), 
+        panel.grid.major.y = element_blank(), 
+        axis.line.y = element_blank()) +
+  labs(y = "SERP feature", x = NULL, title = "Presence of SERP features")#+
+  #ggsave(here::here("plots", "reworked", "serp_features.pdf"),
+  #       width = 10, height = 6.5, device = cairo_pdf)
 ```
+
 ```{r}
 rdff <- rdf %>% 
   select(keyword, volume, clicks, cpc, serp_features, cps) %>% 
@@ -480,13 +469,19 @@ rdffn <- left_join(dffn %>% select(keyword, n_serp), dfs, by = "keyword")
 
 Representative:
 
-```{r serp_presence_repr, fig.height = 5, fig.width = 7}
+```{r serp_presence_repr, fig.height = 6.5, fig.width = 10}
 rdff %>% group_by(serp_features) %>% 
   summarise(prop = n() / nrow(rdff)) %>% 
   ggplot(aes(y = reorder(serp_features, prop), x = prop)) +
-  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
-  scale_x_continuous(labels = scales::percent) +
-  labs(y = "SERP feature", x = "", title = "Presence of SERP features")
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.65) +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1), expand = c(0, 0),
+                     limits = c(0, .2)) +
+  theme(panel.grid.minor.x = element_blank(), 
+        panel.grid.major.y = element_blank(), 
+        axis.line.y = element_blank()) +
+  labs(y = "SERP feature", x = NULL, title = "Presence of SERP features") +
+  ggsave(here::here("plots", "reworked", "serp_features.pdf"),
+         width = 10, height = 6.5, device = cairo_pdf)
 ```
 
 By volume:
@@ -497,7 +492,7 @@ rdff %>% group_by(serp_features) %>%
   ggplot(aes(y = reorder(serp_features, prop), x = prop)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
   scale_x_continuous(labels = scales::percent) +
-  labs(y = "SERP feature", x = "", title = "Presence of SERP features")
+  labs(y = "SERP feature", x = NULL, title = "Presence of SERP features")
 ```
 
 In sample:
@@ -508,7 +503,7 @@ dffn %>% group_by(n_serp) %>%
   summarise(n = n() / nrow(dffn)) %>% 
   ggplot(aes(x = n_serp, y = n)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
-  labs(x = "Number of serp features", y = "", title = "Distribution of SERP features") +
+  labs(x = "Number of serp features", y = NULL, title = "Distribution of SERP features") +
   scale_y_continuous(labels = scales::percent)
 ```
 
@@ -519,7 +514,7 @@ rdffn %>% group_by(n_serp) %>%
   summarise(prop = sum(volume) / sum(rdff$volume)) %>% 
   ggplot(aes(x = n_serp, y = prop)) +
   geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
-  labs(x = "Number of serp features", y = "", title = "Distribution of SERP features") +
+  labs(x = "Number of serp features", y = NULL, title = "Distribution of SERP features") +
   scale_y_continuous(labels = scales::percent)
 ```
 
@@ -527,7 +522,7 @@ rdffn %>% group_by(n_serp) %>%
 
 The knowledge card has a huge effect in reducing the cps, while the other SERP features have limited effect. Searches with the Shopping results SERP feature have higher cps on average.
 
-```{r serp_cps}
+```{r serp_cps, fig.width = 10, fig.height = 7.5}
 order <- dff %>% 
   group_by(serp_features) %>%
   summarise(mean_cps = mean(cps, na.rm = T)) %>% 
@@ -538,8 +533,14 @@ order <- dff %>%
 dff %>% 
   mutate(serp_features = factor(serp_features, levels = order)) %>% 
   ggplot(aes(y = serp_features, x = cps)) +
-  stat_density_ridges(fill = "turquoise4", color = "black") +
-  labs(y = "SERP feature", title = "SERP features and cps")
+  stat_density_ridges(fill = colorspace::desaturate(bl_col, .2), color = bl_dark, alpha = .7, size = 1) +
+  scale_x_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  labs(x = "Cost per sale (CPS)", y = "SERP feature", title = "SERP features and cost per sale") +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  ggsave(here::here("plots", "reworked", "serp_cps.pdf"),
+         width = 10, height = 7.5, device = cairo_pdf)
 ```
 
 ```{r serp_volume_ridge}
@@ -556,29 +557,51 @@ dff %>%
   scale_x_log10(labels = comma) +
   stat_density_ridges(fill = "turquoise4", color = "black") +
   labs(y = "SERP feature", title = "SERP features and cps")
+
+  
+dff %>% 
+  mutate(serp_features = factor(serp_features, levels = order)) %>% 
+  ggplot(aes(y = serp_features, x = volume)) +
+  stat_density_ridges(fill = colorspace::desaturate(bl_col, .2), color = bl_dark, alpha = .7, size = 1) +
+  scale_x_log10(labels = comma) +
+  coord_cartesian(clip = "off") +
+  labs(x = "Volume", y = "SERP feature", title = "SERP features and volume") +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  ggsave(here::here("plots", "reworked", "serp_volume.pdf"),
+         width = 10, height = 7.5, device = cairo_pdf)
 ```
 
 
 Low difficulty keywords have fewer SERP features 
 
-```{r, serp_difficulty_boxplot}
+```{r, serp_difficulty_boxplot, fig.height = 6.5, fig.width = 10}
 rdffn %>% mutate(n_serp = as.numeric(n_serp)) %>% 
   drop_na(difficulty_cat) %>% 
   ggplot(aes(x = difficulty_cat, y = n_serp)) +
-  geom_boxplot() +
-  labs(x = "Difficulty", y = "SERP features", title = "Difficulty and number of SERP features")
+  geom_boxplot(color = bl_dark, fill = "grey92", size = .7, width = .7) +
+  labs(x = "Difficulty", y = "SERP features", title = "Difficulty and number of SERP features") +
+  ggsave(here::here("plots", "reworked", "serp_difficulty_box.pdf"),
+         width = 10, height = 6.5, device = cairo_pdf)
 ```
 
 
-```{r serp_difficulty_n}
+```{r serp_difficulty_n, fig.width = 10, fig.height = 6.5}
 rdffn %>% group_by(n_serp) %>%
   summarise(difficulty = mean(difficulty, na.rm = T)) %>% 
   ggplot(aes(x = n_serp, y = difficulty)) +
-  geom_bar(stat = "identity", fill = "turquoise4", color = "black", width = 0.8) +
-  labs(x = "SERP features", title = "Number of SERP features and mean difficulty", y = "Difficulty")
+  geom_bar(stat = "identity", fill = bl_dark, color = "black", width = 0.8) +
+  geom_text(aes(label = format(round(difficulty, 1), scientific = FALSE)),
+            nudge_y = .7, family = "Montserrat", fontface = "bold", color = "grey40") +
+  labs(x = "Number of SERP features", title = "Number of SERP features and mean difficulty", y = "Difficulty") +
+  coord_cartesian(clip = "off") +
+  scale_y_continuous(expand = c(.001, .001)) +
+  theme(panel.grid.major.x = element_blank()) +
+  ggsave(here::here("plots", "reworked", "serp_mean_difficulty.pdf"),
+         width = 10, height = 6.5, device = cairo_pdf)
 ```
 
-```{r serp_pairs}
+```{r serp_pairs, fiog.width = 10, fig.height = 5}
 find_pairs <-  function(){
   rs <- rdff %>% filter(serp_features != "(None)") %>% 
     sample_n(20000)
@@ -604,9 +627,15 @@ pairs %>%
   head(10) %>% 
   mutate(pair = glue("{v1} & {v2}")) %>% 
   ggplot(aes(y = reorder(pair, n), x = n)) +
-  geom_bar(stat = "identity", fill = "turquoise4", color = "black") +
-  labs(x = "", y = "SERP feature pair", title = "Most common SERP feature pairings") +
-  scale_x_continuous(labels = scales::percent)
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.65) +
+  labs(x = NULL, y = "SERP feature pair", title = "Most common SERP feature pairings") +
+  scale_x_continuous(labels = scales::label_percent(accuracy = .1), 
+                     breaks = seq(0, .15, by = .025), expand = c(0, 0), limits = c(0, .15)) +
+  theme(panel.grid.minor.x = element_blank(), 
+        panel.grid.major.y = element_blank(), 
+        axis.line.y = element_blank()) +
+  ggsave(here::here("plots", "reworked", "serp_pairings.pdf"),
+         width = 10, height = 5, device = cairo_pdf)
 ```
 
 
@@ -669,7 +698,7 @@ I will be going by *ahref* in the following.
 
 Internationally there are more searches with very low volume, while US has more searches with medium volume.
 
-```{r comparison_count}
+```{r comparison_count, fig.width = 10, fig.height = 6}
 dfv %>% drop_na(volume) %>% 
   mutate(volume_group = case_when(volume < 100 ~ "< 100",
     between(volume, 100, 1000) ~ "100 - 1000",
@@ -682,13 +711,18 @@ dfv %>% drop_na(volume) %>%
   mutate(n = n / sum(n)) %>% 
   ggplot(aes(x = volume_group, y = n, fill = region)) +
   geom_bar(stat = "identity", position = position_dodge(), width = 0.8, color = "black") +
-  labs(fill = "Region", x = "Volume", y = "") +
-  scale_y_continuous(labels = scales::percent, expand = c(0,0))
+  labs(fill = "Region", x = "Volume", y = NULL) +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0)) +
+  scale_fill_manual(values = c("grey70", bl_col), name = NULL) +
+  theme(panel.grid.major.x = element_blank(), legend.position = c(.7, .8),
+        legend.text = element_text(size = 14, color = "grey40", face = "bold")) +
+  ggsave(here::here("plots", "reworked", "volume_region.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
 ```
 There is not a large difference in the number of searches with very high volume. However, the total volume of these searches is a lot higher internationally
 
 
-```{r comparison_volume, fig.width = 9}
+```{r comparison_volume, fig.width = 10, fig.height = 6}
 dfv %>% drop_na(volume) %>% 
   mutate(volume_group = case_when(volume < 100 ~ "< 100",
     between(volume, 100, 1000) ~ "100 - 1000",
@@ -703,13 +737,20 @@ dfv %>% drop_na(volume) %>%
   mutate(n = n / sum(n)) %>% 
   ggplot(aes(x = volume_group, y = n, fill = region)) +
   geom_bar(stat = "identity", position = position_dodge(), width = 0.8, color = "black") +
-  labs(fill = "Region", x = "Volume", y = "") +
-  scale_y_continuous(labels = comma, expand = c(0,0))
+  labs(fill = "Region", x = "Volume", y = NULL) +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0)) +
+  scale_fill_manual(values = c("grey70", bl_col), name = NULL) +
+  theme(panel.grid.major.x = element_blank(), legend.position = c(.2, .5),
+        legend.text = element_text(size = 14, color = "grey40", face = "bold")) +
+  ggsave(here::here("plots", "reworked", "volume_region_high.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
 ```
 
 
+?? CEDRIC: Percentage correct here? Was decimal numbers before but no clue why.
 
-```{r international_v_us_volume}
+
+```{r international_v_us_volume, fig.width = 10, fig.height = 8.5}
 df_int <- df %>% mutate(international_volume = global_volume - volume) %>% 
   filter(international_volume > 0, global_volume > 0) %>% 
   mutate(volume_diff = log10(international_volume) - log10(volume))
@@ -718,11 +759,34 @@ df_int_s <- df_int %>% sample_n(200000)
 
 df_int_s %>% 
   ggplot(aes(x = volume, y = international_volume)) +
-  geom_jitter(size = 0.05, alpha = 0.02, height = 0.15, width = 0.15) +
+  geom_jitter(size = 0.1, alpha = 0.05, height = 0.15, width = 0.15, color = colorspace::desaturate(bl_dark, .3)) +
+  geom_abline(intercept = 0, slope = 1, color = bl_col, size = 1) +
   scale_x_log10(labels = comma, expand = c(0,0)) +
   scale_y_log10(labels = comma, expand = c(0,0)) +
-  geom_abline(intercept = 0, slope = 1, color = "turquoise4", size = 1) +
-  labs(x = "US volume", y = "International volume")
+  labs(x = "US volume", y = "International volume") +
+  ggsave(here::here("plots", "reworked", "volume_region_corr.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
+
+df_int_s %>% 
+  ggplot(aes(x = volume, y = international_volume)) +
+  geom_hex(color = "white") +
+  geom_abline(intercept = 0, slope = 1, color = bl_col, size = 1) +
+  scale_x_log10(labels = comma, expand = c(.03, .03)) +
+  scale_y_log10(labels = comma, expand = c(.03, .03)) +
+  scale_fill_gradient(low = "grey85", high = bl_dark, 
+                      name = "Number of observations",
+                      breaks = seq(500, 9500, by = 1500)) +
+  guides(fill = guide_colorbar(title.position = "top", 
+                               title.hjust = .5,
+                               direction = "horizontal",
+                               barwidth = unit(16, "lines"),
+                               barheight = unit(.4, "lines"))) +
+  labs(x = "US volume", y = "International volume") +
+  theme(legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        legend.position = c(.75, .1)) +
+  ggsave(here::here("plots", "reworked", "volume_region_corr_hex.pdf"),
+         width = 10, height = 8.5, device = cairo_pdf)
 ```
 
 <br>
@@ -765,36 +829,41 @@ Searches that have higher volume in US have a higher click-per-search on average
 df_int_s %>% 
   filter(cps < 5) %>% 
   ggplot(aes(x = volume_diff, y = cps)) +
-  geom_point(alpha = 0.02, size = 0.02) +
-  geom_smooth(method='lm', formula= y~x) +
+  geom_point(size = 0.3, alpha = 0.05, color = "grey20") +
+  geom_smooth(method='lm', formula= y~x, color = bl_col, size = 2) +
   scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
-  labs(x = "")
+  labs(x = NULL, y = "Cost per sale (CPS)") +
+  ggsave(here::here("plots", "reworked", "volume_region_cps_corr.pdf"),
+         width = 10, height = 7, device = cairo_pdf)
 ```
 <br>
 
 They also have a higher cost-per-click on average
 
-```{r international_cpc}
+```{r international_cpc, fig.width = 10, fig.height = 7}
 df_int_s %>% 
   ggplot(aes(x = volume_diff, y = cpc)) +
-  geom_point(alpha = 0.08, size = 0.08) +
-  scale_y_log10(labels = comma) +
-  geom_smooth(method='lm', formula= y~x) +
+  geom_point(size = 0.3, alpha = 0.05, color = "grey20") +
+  geom_smooth(method='lm', formula= y~x, color = bl_col, size = 2) +
   scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
-  labs(x = "")
+  scale_y_log10(labels = comma) +
+  labs(x = NULL, y = "CPC") +
+  ggsave(here::here("plots", "reworked", "volume_region_cpc_corr.pdf"),
+         width = 10, height = 7, device = cairo_pdf)
 ```
 <br>
 
 Searches that have higher volume internationally, tend to have higher difficulty
 
-```{r international_difficulty}
+```{r international_difficulty, fig.width = 10, fig.height = 7}
 df_int_s %>% 
   ggplot(aes(x = volume_diff, y = difficulty)) +
-  geom_point(alpha = 0.08, size = 0.08) +
-  #scale_y_log10(labels = comma) +
-  geom_smooth(method='lm', formula= y~x) +
+  geom_point(size = 0.3, alpha = 0.05, color = "grey20") +
+  geom_smooth(method='lm', formula= y~x, color = bl_col, size = 2) +
   scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
-  labs(x = "")
+  labs(x = NULL, y = "Difficulty") +
+  ggsave(here::here("plots", "reworked", "volume_region_difficulty_corr.pdf"),
+         width = 10, height = 7, device = cairo_pdf)
 ```
 
 <br>
@@ -836,7 +905,7 @@ df %>% ggplot(aes(x = clicks)) +
   geom_histogram(fill = "turquoise4", color = "black") +
   scale_x_log10(labels = comma) +
   scale_y_continuous(limits = c(0, 250000), expand = c(0,0)) +
-  labs(title = "Distribution of number of clicks", y = "", x = "") +
+  labs(title = "Distribution of number of clicks", y = NULL, x = NULL) +
   geom_vline(xintercept = log_mean, linetype = "dashed", color = "blue", size = 1) +
   ggeasy::easy_remove_y_axis()
 ```
@@ -872,3 +941,25 @@ tbl %>% pander()
 
 We can see that searches with high return rates tend to have lower difficulty, and to be clicked on a lot more.
 
+```{r convert_to_pngs, results='asis', echo=FALSE, eval=FALSE, include=FALSE}
+dir_plots <- here::here("plots", "reworked")
+
+pdfs <- list.files(dir_plots, pattern = ".*pdf", recursive = TRUE)
+for(pdf in pdfs) {
+  pdf_convert(pdf = glue::glue("{dir_plots}/{pdf}"), 
+              filenames = glue::glue("{dir_plots}/{str_remove(pdf, '.pdf')}.png"),
+              format = "png", dpi = dpi)
+}
+```
+
+***
+
+<details><summary>Session Info</summary>
+
+```{r sessionInfo}
+Sys.time()
+git2r::repository()
+sessionInfo()
+```
+
+</details>
