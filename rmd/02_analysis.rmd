@@ -652,7 +652,7 @@ df %>% mutate(prop = volume / sum(volume)) %>%
   ggplot(aes(x = length, y = prop)) +
   geom_line(color = colorspace::desaturate(bl_col, .35), size = 1) + 
   geom_point(color = bl_dark, size = 2.5) +
-  scale_x_continuous(expand = c(.001, .001)) +
+  scale_x_continuous(expand = c(.008, .008)) +
   scale_y_continuous(labels = scales::label_percent(accuracy = 1), breaks = seq(0, .14, by = .02)) +
   labs(x = "Keyword length", y = "Total search volume", title = "Search volume by keyword length") +
   theme(panel.grid.minor.x = element_blank()) +
