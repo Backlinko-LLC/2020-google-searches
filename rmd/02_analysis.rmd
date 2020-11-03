@@ -60,7 +60,7 @@ extrafont::loadfonts(device = "win")
 
 ```{r prep}
 set.seed(1)
-required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords")
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords", "magicfor", "gapminder")
 for(i in required_packages) { 
   if(!require(i, character.only = T)) {
     #  if package is not existing, install then load the package
@@ -892,116 +892,123 @@ df %>% group_by(type) %>%
 
 
 
-!!!D: I would guess most are navigational queries. May be we can add a separate category "navigational - brands"? see a list below. What do you think? 
 
-Also, please not what the % is for keywords that don´t fit into any of the cat. and list the keywords in your descriptions for all cat. 
 
-navigational_words_brands <- c(
-Amazon
-Google
-Apple
-Microsoft
-Samsung Group
-ICBC
-Facebook
-Walmart
-Ping An
-Huawei
-Mercedes-Benz
-Verizon
-China Construction Bank
-AT&T
-Toyota
-State Grid
-Disney
-Agricultural Bank Of China
-WeChat
-Bank of China
-Home Depot
-China Mobile
-Shell
-Saudi Aramco
-Volkswagen
-YouTube
-Tencent
-Starbucks
-Wells Fargo
-BMW
-Deutsche Telekom
-Moutai
-PetroChina
-Coca-Cola
-Mitsubishi Group
-McDonald's
-Taobao
-NTT Group
-Bank of America
-Nike
-Porsche
-Sinopec
-IBM
-CITI
-Honda
-Marlboro
-Deloitte
-Chase
-Tmall
-UPS
-American Express
-Xfinity
-UnitedHealthcare
-Sumitomo Group
-Intel
-VISA
-Instagram
-China Life
-accenture
-Allianz
-CSCEC
-PWC
-Lowe's
-Mitsui
-General Electric
-EY
-Oracle
-Cisco
-BP
-CVS
-Total
-FedEx
-Netflix
-China Merchants Bank
-JP Morgan
-Boeing
-Costco
-SK Group
-Wuliangye
-Evergrande
-Nestle
-Hyundai Group
-China Telecom
-Siemens
-TATA Group
-Mastercard
-Bosch
-IKEA
-HSBC
-Spectrum
-Vodafone
-Pepsi
-Alibaba.com
-Ford
-AIA
-Orange
-Nissan
-Chevron
-GUCCI
-Dell Technologies
+## Other countries
 
-   
-***
 
-<details><summary>Session Info</summary>
+```{r}
+loc <- jsonlite::read_json("../raw_data/locations_stats.json")
+
+magic_for(print, silent = TRUE)
+for (i in 1:67){
+    country <- loc$tasks[[1]]$result[[i]]$location_name
+    code <- loc$tasks[[1]]$result[[i]]$location_code
+    
+    print(country)
+    print(code)
+}
+
+countries <- magic_result_as_dataframe() %>% 
+    left_join(
+        gapminder %>% 
+            filter(year == 2007),
+        by = "country")
+```
+
+
+
+
+```{r}
+write_locations_cpc <- function(){
+    magic_for(print, silent = TRUE)
+    for (code in countries$code){
+        sql <- glue("SELECT AVG(keyword_info_cpc) as cpc
+                    FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+                  WHERE location = {code} 
+                  AND keyword_info_search_volume > 0
+                  ")
+        tb <- bq_project_query("dataforseo-bigquery", sql)
+        df <- bq_table_download(tb) 
+        cpc <-  df$cpc
+        print(cpc)
+        }
+    locations_cpc <- magic_result_as_dataframe()
+    write_csv(locations_cpc, "../raw_data/locations_cpc.csv")
+}
+#write_locations_cpc()
+locations_cpc <- read_csv("../raw_data/locations_cpc.csv")
+```
+
+
+```{r}
+write_locations_volume <- function(){
+    magic_for(print, silent = TRUE)
+    for (code in countries$code){
+        sql <- glue("SELECT SUM(keyword_info_search_volume) / 10000 as volume
+                    FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+                  WHERE location = {code} 
+                  AND keyword_info_search_volume > 0
+                  ")
+        tb <- bq_project_query("dataforseo-bigquery", sql)
+        df <- bq_table_download(tb) 
+        volume <-  df$volume * 10000
+        print(volume)
+        }
+    locations_volume <- magic_result_as_dataframe()
+    write_csv(locations_volume, "../raw_data/locations_volume.csv")
+}
+#write_locations_volume()
+locations_volume <- read_csv("../raw_data/locations_volume.csv")
+```
+
+There is only data for 5 English speaking countries
+
+```{r}
+countries <- inner_join(
+    locations_volume,
+    locations_cpc,
+    by = "code") %>% 
+    left_join(countries, by = "code") %>% 
+    drop_na(volume)
+
+countries$country
+```
+
+```{r, countries_volume}
+countries %>% 
+    mutate(volume_per_pop = volume / pop) %>% 
+    mutate(country = case_when(
+        country == "United Kingdom" ~ "UK",
+        country == "United States" ~ "US",
+        T ~ country
+    )) %>% 
+    ggplot(aes(x = reorder(country, volume_per_pop), y = volume_per_pop)) +
+    geom_bar(stat = "identity", fill = bl_dark, width = 0.85, color = "black") +
+    scale_y_continuous( expand = c(.001, .001)) +
+    theme(panel.grid.major.x = element_blank()) +
+    labs(y = "Search volume per person", x = NULL, title = "Total search volume compared to population size")
+```
+
+
+
+```{r, countries_cpc}
+countries %>% 
+    mutate(country = case_when(
+        country == "United Kingdom" ~ "UK",
+        country == "United States" ~ "US",
+        T ~ country
+    )) %>% 
+    ggplot(aes(x = reorder(country, cpc), y = cpc)) +
+    geom_bar(stat = "identity", fill = bl_dark, width = 0.85, color = "black") +
+    scale_y_continuous( expand = c(.001, .001)) +
+    theme(panel.grid.minor.x = element_blank(), 
+          panel.grid.major.y = element_blank(), 
+          axis.line.y = element_blank()) +
+    labs(y = "Mean CPC", x = NULL, title = "Mean CPC by country")
+```
+
+
 
 ```{r sessionInfo}
 Sys.time()
