@@ -121,7 +121,59 @@ knitr::kable(tbl, caption = "Overview")
 
 <br>
 
-## 3.1 Questions in searches
+# 3.1 Top searches
+
+The following is a list of the top searches (if you include all the misspelled searches for each site).
+
+```{r top, echo=FALSE}
+title_description_table <- read.csv(here::here("plots", "csv", "misspell.csv"), stringsAsFactors=F)  %>% select(search = spell, proportion = volume_perc) %>% 
+  head(20)
+knitr::kable(title_description_table, caption = "Searches with highest volume")
+```
+
+<br>
+
+Note that in the data set, a lot of the top searches are listed as misspellings of popular website. For example, in the table below are listed 10 of the highest searches by volume, if we do not group intended spelling. We can see that they are all attempts to go to Youtube. Note that for some of them the intended spelling was not recognized, so the percentages in the above table are an underestimate.
+
+
+```{r top_missspell, echo=FALSE}
+title_description_table <- read.csv(here::here("plots", "csv", "top_misspell.csv"), stringsAsFactors=F)
+knitr::kable(title_description_table, caption = "Searches with highest volume, no grouping")
+```
+
+
+<br>
+<br>
+
+## 3.2 Search volume
+
+The top 2000 searches have extremely high volume, while the vast majority of the rest of the searches are very low volume.
+
+```{r search_tails, echo=FALSE}
+knitr::include_graphics(here::here("plots", "reworked", "volume_by_searches.png"))
+```
+
+(Note that if misspelled variants are grouped together, this figure will have an even more extreme skew.)
+
+```{r search_tails2, echo=FALSE}
+knitr::include_graphics(here::here("plots", "reworked", "volume_percentage.png"))
+```
+
+
+<br>
+<br>
+
+
+## 3.3 Spell types
+
+If a misspelling is recognized, a so-called spell type is suggested. There are three types of spell shown in the table below. 1.4% of searches have a spell type, but those that do have tend to have high volume. 
+
+```{r spell_types_count, echo=FALSE}
+knitr::include_graphics(here::here("plots", "spell_types_count-1.png"))
+```
+
+
+## 3.4 Questions in searches
 
 ~14% of searches are in the form of a question. "how" is the most common question word.
 
@@ -138,7 +190,7 @@ knitr::include_graphics(here::here("plots", "reworked", "questions_volume.png"))
 <br>
 <br>
 
-## 3.2 Stopwords
+## 3.5 Stopwords
 
 "how" and "the" are the most common stopwords, which are present in 6-8% of searches.
 
@@ -156,7 +208,7 @@ knitr::include_graphics(here::here("plots", "reworked", "stopwords_cloud_colors.
 <br>
 <br>
 
-## 3.3. Keyword length
+## 3.6. Keyword length
 
 The most searched queries have length 6-9 characters, and falls continuously for search queries longer or shorter than that.
 
@@ -165,9 +217,17 @@ knitr::include_graphics(here::here("plots", "reworked", "volume_keywordlength.pn
 ```
 
 <br>
+
+Search phrases with fewer words have higher volume
+
+```{r keyword_word_volume, echo=FALSE}
+knitr::include_graphics(here::here("plots", "keyword_word_volume-1.png"))
+```
+
+<br>
 <br>
 
-## 3.4 Keyword info categories
+## 3.7 Keyword info categories
 
 Internet & Telecom is the keyword category with the highest mean volume.
 
@@ -199,6 +259,8 @@ Finance has the highest mean cost per click.
 knitr::include_graphics(here::here("plots", "reworked", "cpc_mean_category.png"))
 ```
 
+The average CPC for all searches is 0.61
+
 *A version with bars ordered by value:*
 
 ```{r search_category_cpc_ordered, echo=FALSE}
@@ -208,7 +270,7 @@ knitr::include_graphics(here::here("plots", "reworked", "cpc_mean_category_order
 <br>
 <br>
 
-## 3.5 Keyword difficulty
+## 3.8 Keyword difficulty
 
 
 As volume increases, the difficulty increases.
@@ -221,13 +283,15 @@ The slope of the linear regression line is such that for each doubling of the vo
 
 <br>
 
-Higher difficulty also means higher CPC on average. Note that the Y axis is logarithmic, so a small move on the y axis is a large increase in value. The bar in the middle indicates the median value, and it increases from 0.35 to 1.2 when going from easy to super hard difficulty.
+Higher difficulty also means higher CPC on average. Note that the Y axis is logarithmic, so a small move on the y axis is a large increase in value.
 
-```{r difficulty_cpc_violin, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "cpc_difficulty.png"))
+
+```{r difficulty_cpc_scatter, echo=FALSE}
+knitr::include_graphics(here::here("plots", "difficulty_cpc_scatter-1.png"))
 ```
 
-*A version showing the true sample size by mapping it to width:*
+
+An alternative visualization of the same data by grouped category in a violin plot The bar shows the median cpc value by difficulty.
 
 ```{r difficulty_cpc_violin_true_sample_size, echo=FALSE}
 knitr::include_graphics(here::here("plots", "reworked", "cpc_difficulty_true.png"))
@@ -237,48 +301,8 @@ knitr::include_graphics(here::here("plots", "reworked", "cpc_difficulty_true.png
 <br>
 <br>
 
-## 3.6 Spell types
 
-Most of the searches with the highest volumes are attempts to go to a popular website.
-
-```{r top_missspell, echo=FALSE}
-title_description_table <- read.csv(here::here("plots", "csv", "top_misspell.csv"), stringsAsFactors=F)
-knitr::kable(title_description_table, caption = "Searches with highest volume")
-```
-
-<br>
-
-As a result about half of all volume has a spell type. Although only ~1.4% of searches have a spell type.
-
-
-```{r misspell, echo=FALSE}
-title_description_table <- read.csv(here::here("plots", "csv", "misspell.csv"), stringsAsFactors=F) %>% 
-  mutate(site = spell)
-knitr::kable(title_description_table, caption = "Top 10 intended searches that are misspelled")
-```
-
-<br>
-<br>
-
-## 3.7 Search volume
-
-The top 2000 searches have extremely high volume, while the vast majority of the rest of the searches are very low volume.
-
-```{r search_tails, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_by_searches.png"))
-```
-
-```{r search_tails2, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_percentage.png"))
-```
-
-Note that many of these extremely high volume searches are not a search for something as such, but an attempt to go to one of the popular sites above.
-
-<br>
-<br>
-
-
-## 3.8 SERP features
+## 3.9 SERP features
 
 (Note there are (at least) two additional SERP feature types (*Knowledge Panel* and *Videos*), for which the sample size is too small to include.)
 
@@ -322,7 +346,7 @@ knitr::include_graphics(here::here("plots", "reworked", "serp_mean_difficulty.pn
 <br>
 <br>
 
-## 3.9 Return rate
+## 3.10 Return rate
 
 We can see that searches with high return rates tend to have lower difficulty, and to be clicked on a lot more.
 
@@ -335,7 +359,7 @@ knitr::kable(title_description_table, caption = "Comparison of searches with sam
 <br>
 
 
-## 3.10 International searches
+## 3.11 International searches
 
 There is search data from 5 English-speaking countries.
 
