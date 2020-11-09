@@ -291,10 +291,10 @@ knitr::include_graphics(here::here("plots", "difficulty_cpc_scatter-1.png"))
 ```
 
 
-An alternative visualization of the same data by grouped category in a violin plot The bar shows the median cpc value by difficulty.
+An alternative visualization of the same data by grouped category in a boxplot:
 
-```{r difficulty_cpc_violin_true_sample_size, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "cpc_difficulty_true.png"))
+```{r difficulty_cpc_boxplot, echo=FALSE}
+knitr::include_graphics(here::here("plots", "difficulty_cpc_boxplot-1.png"))
 ```
 
 
@@ -309,31 +309,31 @@ knitr::include_graphics(here::here("plots", "reworked", "cpc_difficulty_true.png
 The SERP features featured in the most searches are *Image pack* and *People also ask*:
 
 ```{r serp_presence_repr, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "serp_features.png"))
+knitr::include_graphics(here::here("plots", "video_results", "serp_presence.png"))
 ```
 
 The knowledge card has a huge effect in reducing the clicks-per-search, while the other SERP features have limited effect. Searches with the Shopping results SERP feature have higher cps on average.
 
 ```{r serp_cps, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "serp_cps.png"))
+knitr::include_graphics(here::here("plots", "video_results", "serp_cps.png"))
 ```
 
 Easy keywords have fewer SERP features.
 
 ```{r serp_difficulty_boxplot, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "serp_difficulty_box.png"))
+knitr::include_graphics(here::here("plots", "video_results", "serp_difficulty_boxplot.png"))
 ```
 
 Thumbnail & Top stories is the most common SERP feature pairing.
 
 ```{r serp_pairs, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "serp_pairings.png"))
+knitr::include_graphics(here::here("plots", "video_results", "serp_pairs.png"))
 ```
 
 Searches without SERP features tend to be low volume.
 
 ```{r serp_volume_ridge, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "serp_volume.png"))
+knitr::include_graphics(here::here("plots", "video_results", "serp_volume_ridge.png"))
 ```
 
 Searches with more SERP features have higher mean difficulty.
