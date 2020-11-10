@@ -121,7 +121,7 @@ knitr::kable(tbl, caption = "Overview")
 
 <br>
 
-# 3.1 Top searches
+## 3.1 Top searches
 
 The following is a list of the top searches (if you include all the misspelled searches for each site).
 
@@ -441,5 +441,14 @@ Searches that have higher volume internationally, tend to have higher difficulty
 knitr::include_graphics(here::here("plots", "0911", "volume_region_difficulty_corr.png"))
 ```
 
+<br>
+
+## 3.12 Searches with highest spikes in volume
+
+Many of these are people featured in Google doodles
 
 
+```{r tbl_spikes, echo=FALSE}
+title_description_table <- vroom::vroom(here::here("plots", "csv", "spikes.csv"))
+knitr::kable(title_description_table, caption = "Searches with highest difference in search volume over time")
+```
