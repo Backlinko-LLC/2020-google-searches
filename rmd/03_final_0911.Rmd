@@ -76,31 +76,18 @@ library(gt)
 
 # 1 Introduction 
 
-
-<br>
-<br>
+Keyword data informs and impacts every other SEO task, including finding content topics, on-page SEO, email outreach, and content promotion. While a wealth of companies provide granular keyword data, a birds-eye view of Google Searches is missing in the industry.  This large-scale analysis aims to fill the gap. 
 
 # 2 Methodology
 
+As a data partner, DataForSEO provided the raw data for the analysis through their keyword database [https://dataforseo.com/databases]. The analysis was limited to US keyword data that accounted for around 306 keyword searches. Keyword monthly searchers with volume of 0 were removed from the data set. The data was queried from a Google BigQuery database. 
+
+To attain additional insights from the data, we enriched a random sample of around 2.5 million keywords with the Ahrefs Keyword Explorer. This includes the data on difficulty, return rate, clicks, region volume, and SERP features. 
+
+Below an overview of the data:
 
 <br>
 
-#### Data preparation
-
-Searches with volume 0 are removed from the data set. For *ahref* analysis, only searches with volume > 100 are looked at. Analyses are based on US location.
-
-<br>
-<br>
-
-##### Data enrichment
-
-~2.5 million searches were enriched with *ahref*. This includes the statistics difficulty, return rate, clicks, region volume, and SERP features.
-
-<br>
-<br>
-
-
-#### Overview of the data
 
 ```{r}
 tbl <- tribble(~Statistic, ~Value,
