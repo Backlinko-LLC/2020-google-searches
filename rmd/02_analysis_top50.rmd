@@ -1,0 +1,365 @@
+---
+title: "Keyword landscape analysis"
+author: ""
+date: "Last updated on `r Sys.Date()`"
+output:
+  html_document:
+    theme: paper
+    highlight: kate
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+<style>
+.list-group-item.active, .list-group-item.active:hover, .list-group-item.active:focus {
+  background-color: #00d188;
+  border-color: #00d188;
+}
+
+body {
+  font-family: montserrat;
+  color: #444444;
+  font-size: 14px;
+}
+
+h1 {
+  font-weight: bold;
+  font-size: 28px;
+}
+
+h1.title {
+  font-size: 30px;
+  color: #00d188;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+h3 {
+  font-size: 18px;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/", cache = F, fig.showtext = TRUE, dpi = 700)
+knitr::knit_hooks$set(inline = function(x) {
+  prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
+})
+Sys.setlocale("LC_TIME", "C")
+extrafont::loadfonts(device = "win")
+```
+
+
+
+```{r prep}
+set.seed(1)
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords", "magicfor", "gapminder")
+for(i in required_packages) { 
+  if(!require(i, character.only = T)) {
+    #  if package is not existing, install then load the package
+    install.packages(i, dependencies = T)
+  require(i, character.only = T)
+  }
+}
+panderOptions('table.alignment.default', "left")
+## quality of png's
+dpi <- 750
+## theme updates; please adjust to client´s website
+#theme_set(ggthemes::theme_clean(base_size = 15))
+theme_set(ggthemes::theme_clean(base_size = 15))
+theme_update(plot.margin = margin(30, 30, 30, 30),
+             plot.background = element_rect(color = "white",
+                                            fill = "white"),
+             plot.title = element_text(size = 20,
+                                       face = "bold",
+                                       lineheight = 1.05,
+                                       hjust = .5,
+                                       margin = margin(10, 0, 25, 0)),
+             plot.title.position = "plot",
+             plot.caption = element_text(color = "grey40",
+                                         size = 9,
+                                         margin = margin(20, 0, -20, 0)),
+             plot.caption.position = "plot",
+             axis.line.x = element_line(color = "black",
+                                        size = .8),
+             axis.line.y = element_line(color = "black",
+                                        size = .8),
+             axis.title.x = element_text(size = 16,
+                                         face = "bold",
+                                         margin = margin(t = 20)),
+             axis.title.y = element_text(size = 16,
+                                         face = "bold",
+                                         margin = margin(r = 20)),
+             axis.text = element_text(size = 11,
+                                      color = "black",
+                                      face = "bold"),
+             axis.text.x = element_text(margin = margin(t = 10)),
+             axis.text.y = element_text(margin = margin(r = 10)),
+             axis.ticks = element_blank(),
+             panel.grid.major.x = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.major.y = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.minor.x = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.minor.y = element_blank(),
+             panel.spacing.x = unit(4, "lines"),
+             panel.spacing.y = unit(2, "lines"),
+             legend.position = "top",
+             legend.title = element_text(,
+                                         color = "black",
+                                         size = 14,
+                                         margin = margin(5, 0, 5, 0)),
+             legend.text = element_text(
+                                        color = "black",
+                                        size = 11,
+                                        margin = margin(4.5, 4.5, 4.5, 4.5)),
+             legend.background = element_rect(fill = NA,
+                                              color = NA),
+             legend.key = element_rect(color = NA, fill = NA),
+             #legend.key.width = unit(5, "lines"),
+             #legend.spacing.x = unit(.05, "pt"),
+             #legend.spacing.y = unit(.55, "pt"),
+             #legend.margin = margin(0, 0, 10, 0),
+             strip.text = element_text(face = "bold",
+                                       margin = margin(b = 10)))
+## theme settings for flipped plots
+theme_flip <-
+  theme(panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_line(size = .6,
+                                          color = "#eaeaea"))
+## theme settings for charts without y axis
+theme_blank <- 
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.line.y = element_blank(),
+        axis.text.y = element_blank())
+
+## numeric format for labels
+num_format <- scales::format_format(big.mark = ",", small.mark = ",", scientific = F)
+## main color backlinko
+bl_col <- "#00d188"
+bl_dark <- darken(bl_col, .3, space = "HLS")
+```
+
+I read initial *ahref* and top50 *ahref*
+
+(I remove the 47th and 50th entry as they are both misspellings of youtube. They have low traffic compared to the others, so no real importance.)
+
+
+```{r}
+ahref <- bind_rows(
+    pmap_df(list(0:99), ~read_csv(glue("../proc_data/ahref/export_keywords_100_to_500/{.x}.csv"))) %>% 
+        clean_names() %>% mutate(cat = "100-500"),
+    pmap_df(list(0:99), ~read_csv(glue("../proc_data/ahref/export_keywords_500_to_1000/{.x}.csv"))) %>% 
+        clean_names() %>% mutate(cat = "500-1000"),
+    pmap_df(list(0:49), ~read_csv(glue("../proc_data/ahref/export_keywords_1000_to_10000/{.x}.csv"))) %>% 
+        clean_names() %>% mutate(cat = "1000-10000"),
+    pmap_df(list(0:33), ~read_csv(glue("../proc_data/ahref/export_keywords_10000_to_1000000000/{.x}.csv"))) %>% 
+            clean_names() %>% mutate(cat = "10000+")
+)
+
+top50 <- vroom::vroom("../proc_data/top_50_with_ahrefs.csv") %>% 
+    janitor::clean_names() %>% 
+    filter(!(keyword %in% c("the youtube", "youtubecom"))) %>% 
+    mutate(last_letter = str_sub(volume, -1)) %>% 
+    mutate(volume = case_when(
+        last_letter == "M" ~ as.numeric(str_sub(volume, 0, -2)) * 1000000,
+        last_letter == "K" ~ as.numeric(str_sub(volume, 0, -2)) * 1000
+    )) 
+```
+
+conform that they roughly agree
+
+```{r, render = pander}
+ahref %>% 
+    rename(volume_initial = volume) %>% 
+    inner_join(top50, by = "keyword") %>% 
+    select(keyword, volume_initial, volume)
+```
+
+Get the volume and count for the original dataset for each group
+
+```{r, render = pander}
+length_keyword_files <- function(min, max){
+  sql <- glue("SELECT SUM(COALESCE(keyword_info_search_volume / 10000, 0)) AS volume
+          FROM `dataforseo-bigquery.dataforseo_data.keyword_data` 
+          WHERE location = 2840 
+          AND keyword_info_search_volume >= {min}
+          AND keyword_info_search_volume < {max}")
+  tb <- bq_project_query("dataforseo-bigquery", sql)
+  df <- bq_table_download(tb) %>% mutate(min = min, max = max, volume = 10000 * volume)
+}
+
+volume <- map2_df(c(0, 100, 500, 1000, 10000), c(100, 500, 1000, 10000, 1000000000), length_keyword_files) %>% 
+    mutate(cat = case_when(
+        min == 0 ~ "0-100",
+        min == 100 ~ "100-500",
+        min == 500 ~ "500-1000",
+        min == 1000 ~ "1000-10000",
+        min == 10000 ~ "10000+")) %>% 
+    select(cat, volume_orig = volume)
+
+length_keyword_files <- function(min, max){
+  sql <- glue("SELECT COUNT(*) AS count
+          FROM `dataforseo-bigquery.dataforseo_data.keyword_data` 
+          WHERE location = 2840 
+          AND keyword_info_search_volume >= {min}
+          AND keyword_info_search_volume < {max}")
+  tb <- bq_project_query("dataforseo-bigquery", sql)
+  df <- bq_table_download(tb) %>% mutate(min = min, max = max)
+}
+
+count <- map2_df(c(0, 100, 500, 1000, 10000), c(100, 500, 1000, 10000, 1000000000), length_keyword_files) %>% 
+    mutate(cat = case_when(
+        min == 0 ~ "0-100",
+        min == 100 ~ "100-500",
+        min == 500 ~ "500-1000",
+        min == 1000 ~ "1000-10000",
+        min == 10000 ~ "10000+")) %>% 
+    select(cat, count_orig = count)
+
+n_orig <- inner_join(volume, count, by = "cat") %>% 
+    rename(n_orig = count_orig)
+n_orig
+```
+
+Overview of volume and count in the two datasets
+
+```{r, render = pander}
+ns <- ahref %>% group_by(cat) %>% 
+    summarise(n_ahref = n(), volume_ahref = sum(volume, na.rm = T)) %>% 
+    full_join(n_orig, by = "cat")
+ns
+```
+
+
+Since the top50 is very important, let's split up the 10000+ category further.
+
+```{r}
+#ahref_top50_vol <- top50 %$% sum(volume)
+top50_in_ahref <- ahref %>% filter(keyword %in% top50$keyword)
+top50_in_ahref_vol <- top50_in_ahref %$% sum(volume)
+
+top100k <- vroom::vroom("../proc_data/samples/top100k.csv")
+orig_top50_vol <- top100k %>% filter(spell %in% top50$keyword) %>% 
+    summarise(s = sum(keyword_info_search_volume)) %>% pull(s)
+
+
+ns %<>% add_row(
+    cat = "top 50", 
+    n_ahref = top50_in_ahref %>% nrow(), 
+    volume_ahref = top50_in_ahref_vol, 
+    volume_orig = orig_top50_vol, 
+    n_orig = 48) %>% 
+    mutate(
+        volume_orig = ifelse(cat == "10000+", volume_orig - orig_top50_vol, volume_orig),
+        volume_ahref = ifelse(cat == "10000+", volume_ahref - top50_in_ahref_vol, volume_ahref)
+        )
+```
+
+Looking at the number included in each category, compared to the total number of searches represented in the original dataset.
+
+```{r, render = pander}
+ns %<>% mutate(prop_included = n_ahref / n_orig)
+ns %>% select(cat, n_ahref, n_orig, prop_included)
+```
+
+From this we can find the estimated volume, based on the *ahref* volume, as it is expected to have been if all keywords had been analyzed with *ahref*:
+
+
+```{r, render = pander}
+ns %<>% mutate(volume_ahref_scaled = volume_ahref / prop_included)
+ns %>% select(cat, volume_ahref, volume_orig, prop_included, volume_ahref_scaled)
+```
+
+The top50 category is highly dependent on which 16 happened to be selected. (The others are large enough that this randomness is not a factor.) The below table lists the true top50.
+
+```{r, render = pander}
+ns %<>% mutate(volume_ahref_true = ifelse(cat == "top 50", sum(top50$volume), NA))
+ns %>% select(cat, volume_orig, volume_ahref_scaled, volume_ahref_true)
+```
+
+We can see that we miss some of the big ones in the top50, and the real number is ~3x.
+
+Still, this number is only 1%(!) of the number using the original data set:
+
+```{r, render = pander}
+1288773300 / 104274763000
+```
+
+Are spelling mistakes really that common that the top100 sites get 100x searches that are spelling mistakes? Seems unlikely to me. Spelling mistakes also get more low volume in *ahref* except for some misspellings that seem more obvious (eg "youtubecom"), whereas in the original data set, many misspellings have extremely high volume.
+
+So I think the correct approach is to make an estimate of the volume based on *ahref*. This can be estimated by upscaling each category as if it was representative.
+
+The category 100-500 has roughly the same volume in the original data set and in scaled ahref, which I think is a very good indicator for this approach being a correct approximation. 100-500 is likely the category that is least skewed by high-volume spelling mistakes.
+
+To repeat: The fact that the 100-500 category gives the correct approximation, shows that the approximation method is correct. All the above categories give an increasingly higher volume in the original data set, but this is because the misspelled searches have too high volume, which is especially important for the high volume categories. Thus we can instead use the approximation from *ahref* which we know is accurate based on the 100-500 category.
+
+So I will calculate the total volume as follows:
+
+For 0-100: Use the total volume in the original data set.
+For 100-500, 500-1000, 1000-10000 and 10000+: Use the upscaled volume of *ahref*
+For top 50: Use the *ahref* top 50.
+
+
+```{r, render = pander}
+ns %<>% mutate(real_volume = case_when(
+    cat == "0-100" ~ volume_orig,
+    cat %in% c("100-500", "500-1000", "1000-10000", "10000+") ~ volume_ahref_scaled,
+    cat == "top 50" ~sum(top50$volume)))
+ns
+```
+
+This gives a total value of (in billions)
+
+```{r, render = pander}
+sum(ns$real_volume) / 1000000000
+```
+
+This is about a tenth of the volume found in the original data set (300 billion), due to the inflation from the misspelled searches. Importantly, note that we cannot simple remove all the ones with a spell_type, since a large portion (near half, it seems) of spell types are unrecognized. Thus, the total volume in the original data set, with identifiable spell types removed, still gives around 150 billion, which is still much higher.
+
+I think the best approach is to trust *ahref* over the original data set, and use this total violume of 40 billion to draw the graphs etc that depend on total volume.
+
+
+Let's start with listing the top 50 searches and their proportions:
+
+```{r, render = pander}
+top50 %>% mutate(volume = scales::percent(volume / sum(ns$real_volume)), accuracy = 0.1) %>%
+    select(keyword, volume)
+```
+
+
+
+```{r}
+top50 %>% mutate(volume = volume / sum(ns$real_volume)) %>% 
+    select(keyword, volume) %>% 
+    write_csv("top50_table.csv")
+```
+
+Long tails:
+
+```{r}
+top50 <- vroom::vroom("top50_table.csv")
+top50 %>% add_rownames() %>% 
+    mutate(rowname = as.numeric(rowname)) %>% 
+    ggplot(aes(x = rowname, y = volume)) +
+    geom_area(alpha = 0.8, fill = bl_dark) +
+    labs(x = "Rank", title = "Volume of searches") +
+    scale_y_continuous(labels = scales::percent, limits = c(0, 0.005), expand = c(0,0)) +
+    scale_x_continuous(limits = c(1, 50), expand = c(0,0))
+```
+
+<br>
+
+In addition, all the previous results that go by volume, could be remade using 40 billion instead of 300 billion.
