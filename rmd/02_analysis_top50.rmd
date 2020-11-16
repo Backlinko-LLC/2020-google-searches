@@ -1,5 +1,5 @@
 ---
-title: "Keyword landscape analysis"
+title: "Top50"
 author: ""
 date: "Last updated on `r Sys.Date()`"
 output:
@@ -48,7 +48,7 @@ h3 {
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/", cache = F, fig.showtext = TRUE, dpi = 700)
+knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/1611/", cache = F, fig.showtext = TRUE, dpi = 700)
 knitr::knit_hooks$set(inline = function(x) {
   prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
 })
@@ -60,7 +60,7 @@ extrafont::loadfonts(device = "win")
 
 ```{r prep}
 set.seed(1)
-required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords", "magicfor", "gapminder")
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords", "magicfor", "gapminder", "arrow")
 for(i in required_packages) { 
   if(!require(i, character.only = T)) {
     #  if package is not existing, install then load the package
@@ -157,18 +157,29 @@ I read initial *ahref* and top50 *ahref*
 (I remove the 47th and 50th entry as they are both misspellings of youtube. They have low traffic compared to the others, so no real importance.)
 
 
-```{r}
-ahref <- bind_rows(
-    pmap_df(list(0:99), ~read_csv(glue("../proc_data/ahref/export_keywords_100_to_500/{.x}.csv"))) %>% 
-        clean_names() %>% mutate(cat = "100-500"),
-    pmap_df(list(0:99), ~read_csv(glue("../proc_data/ahref/export_keywords_500_to_1000/{.x}.csv"))) %>% 
-        clean_names() %>% mutate(cat = "500-1000"),
-    pmap_df(list(0:49), ~read_csv(glue("../proc_data/ahref/export_keywords_1000_to_10000/{.x}.csv"))) %>% 
-        clean_names() %>% mutate(cat = "1000-10000"),
-    pmap_df(list(0:33), ~read_csv(glue("../proc_data/ahref/export_keywords_10000_to_1000000000/{.x}.csv"))) %>% 
-            clean_names() %>% mutate(cat = "10000+")
-)
 
+```{r}
+ahref <- read_feather("../proc_data/ahref/ahref.f")
+
+ahref %>% filter(cat == "10000+", volume < 10000) %>% 
+    drop_na(difficulty) %>% 
+    arrange(volume)
+```
+
+
+
+```{r}
+inner_join(
+    ahref %>% group_by(cat) %>% 
+    summarise(n_ahref = n() / 1000, volume_ahref = sum(volume, na.rm = T) / 1000000),
+    ahref %>% group_by(cat) %>% 
+        summarise(n_ahref_new = n() / 1000, volume_ahref_new = sum(volume, na.rm = T) / 1000000),
+    by = "cat")
+```
+
+
+
+```{r}
 top50 <- vroom::vroom("../proc_data/top_50_with_ahrefs.csv") %>% 
     janitor::clean_names() %>% 
     filter(!(keyword %in% c("the youtube", "youtubecom"))) %>% 
@@ -176,10 +187,13 @@ top50 <- vroom::vroom("../proc_data/top_50_with_ahrefs.csv") %>%
     mutate(volume = case_when(
         last_letter == "M" ~ as.numeric(str_sub(volume, 0, -2)) * 1000000,
         last_letter == "K" ~ as.numeric(str_sub(volume, 0, -2)) * 1000
-    )) 
+    ))
 ```
 
 conform that they roughly agree
+
+
+
 
 ```{r, render = pander}
 ahref %>% 
@@ -195,6 +209,7 @@ length_keyword_files <- function(min, max){
   sql <- glue("SELECT SUM(COALESCE(keyword_info_search_volume / 10000, 0)) AS volume
           FROM `dataforseo-bigquery.dataforseo_data.keyword_data` 
           WHERE location = 2840 
+          AND spell = ''
           AND keyword_info_search_volume >= {min}
           AND keyword_info_search_volume < {max}")
   tb <- bq_project_query("dataforseo-bigquery", sql)
@@ -214,6 +229,7 @@ length_keyword_files <- function(min, max){
   sql <- glue("SELECT COUNT(*) AS count
           FROM `dataforseo-bigquery.dataforseo_data.keyword_data` 
           WHERE location = 2840 
+          AND spell = ''
           AND keyword_info_search_volume >= {min}
           AND keyword_info_search_volume < {max}")
   tb <- bq_project_query("dataforseo-bigquery", sql)
@@ -275,6 +291,11 @@ ns %<>% mutate(prop_included = n_ahref / n_orig)
 ns %>% select(cat, n_ahref, n_orig, prop_included)
 ```
 
+```{r, render = pander}
+ns %<>% mutate(prop_included = n_ahref / n_orig)
+ns %>% select(cat, n_ahref, n_orig, prop_included)
+```
+
 From this we can find the estimated volume, based on the *ahref* volume, as it is expected to have been if all keywords had been analyzed with *ahref*:
 
 
@@ -283,7 +304,7 @@ ns %<>% mutate(volume_ahref_scaled = volume_ahref / prop_included)
 ns %>% select(cat, volume_ahref, volume_orig, prop_included, volume_ahref_scaled)
 ```
 
-The top50 category is highly dependent on which 16 happened to be selected. (The others are large enough that this randomness is not a factor.) The below table lists the true top50.
+The top50 category is highly dependent on which 16 happened to be selected. (The others are large enough that this randomness is not a factor.) The below table lists the true top50 volume.
 
 ```{r, render = pander}
 ns %<>% mutate(volume_ahref_true = ifelse(cat == "top 50", sum(top50$volume), NA))
@@ -292,7 +313,7 @@ ns %>% select(cat, volume_orig, volume_ahref_scaled, volume_ahref_true)
 
 We can see that we miss some of the big ones in the top50, and the real number is ~3x.
 
-Still, this number is only 1%(!) of the number using the original data set:
+Still, this number is only ~1.2%(!) of the number using the original data set:
 
 ```{r, render = pander}
 1288773300 / 104274763000
@@ -334,32 +355,102 @@ I think the best approach is to trust *ahref* over the original data set, and us
 
 Let's start with listing the top 50 searches and their proportions:
 
-```{r, render = pander}
-top50 %>% mutate(volume = scales::percent(volume / sum(ns$real_volume)), accuracy = 0.1) %>%
-    select(keyword, volume)
-```
-
 
 
 ```{r}
-top50 %>% mutate(volume = volume / sum(ns$real_volume)) %>% 
-    select(keyword, volume) %>% 
-    write_csv("top50_table.csv")
+top50 %>% select(keyword, volume) %>% 
+    bind_rows(ahref %>% select(keyword, volume)) %>% 
+    arrange(desc(volume)) %>% 
+    mutate(volume = volume / sum(ns$real_volume)) %>% 
+    distinct(keyword, .keep_all = T) %>% 
+    head(1000) %>% 
+    write_csv("../plots/csv/top1k_table.csv")
+top50 <- read_csv("../plots/csv/top1k_table.csv") %>% head(50)
+top100 <- read_csv("../plots/csv/top1k_table.csv") %>% head(100)
 ```
+
+
+
 
 Long tails:
 
-```{r}
-top50 <- vroom::vroom("top50_table.csv")
-top50 %>% add_rownames() %>% 
+```{r volume_by_searches}
+top100 %>% add_rownames() %>% 
     mutate(rowname = as.numeric(rowname)) %>% 
     ggplot(aes(x = rowname, y = volume)) +
     geom_area(alpha = 0.8, fill = bl_dark) +
-    labs(x = "Rank", title = "Volume of searches") +
-    scale_y_continuous(labels = scales::percent, limits = c(0, 0.005), expand = c(0,0)) +
-    scale_x_continuous(limits = c(1, 50), expand = c(0,0))
+    labs(x = "Rank", title = "Volume of searches", y = "Volume") +
+    scale_y_continuous(labels = c("0%", "0.1%", "0.2%", "0.3%", "0.4%", "0.5%", "0.6%"), limits = c(0, 0.006), expand = c(0,0)) +
+    scale_x_continuous(limits = c(1, 100), expand = c(0,0))
 ```
+
 
 <br>
 
 In addition, all the previous results that go by volume, could be remade using 40 billion instead of 300 billion.
+
+
+> We need specific numbers on this. Top 500=X% of searches. Top 2000=X% of searches. Top 10,000=X% of searches. 
+
+This is not straightforward to find out based on the above analysis.
+
+The best way is to take the top results from AHREF, including the top 50 volume, and those included from 10.000+. For top 50 we have the full estimated volume, but for the remaining with 10.000+ we have a representation of 23%. While that is quite good, it is not 100%. This means that we will miss some words that have higher volume than those included. Thus, this will be an underestimation of the true proportions.
+
+One way to get a better estimate than this, the only way is to run ahref analysis on top x searches. Where x is maybe 2x the number we are interested in, to accomodate spell_types whose true volume is much lower.
+
+A different approach, and the one I will perform here, is to upsample what we have. I take the words we have in the category, bootstrap sample until we have the true amount of searches, and then take the top list. This will not be 100% accurate, but likely be a very good approximation. Especially given that we have the true volume of the top 50 already.
+
+
+
+
+```{r}
+scale_factor <- 1 / ns %>% filter(cat == "10000+") %>% pull(prop_included)
+ahref_10kplus <- ahref %>% anti_join(top50, by = "keyword") %>% 
+    filter(cat == "10000+") %>% 
+    drop_na(volume)# %>% 
+
+ahref_10kplus_scaled <- sample_n(ahref_10kplus, scale_factor * nrow(ahref_10kplus), 
+                                 replace = T) %>% 
+    arrange(desc(volume))
+```
+
+
+```{r}
+sum(top50$volume)
+top10k <- ahref %>% anti_join(top50, by = "keyword") %>% 
+    arrange(desc(volume)) %>% 
+    drop_na(volume)
+
+
+tribble(~top, ~volume,
+        "Top 50", sum(top50$volume),
+        "Top 500", (ahref_10kplus_scaled %>% head(450) %$% sum(volume)) / sum(ns$real_volume) +  sum(top50$volume),
+        "Top 2000", (ahref_10kplus_scaled %>% head(1950) %$% sum(volume)/ 
+            sum(ns$real_volume) +  sum(top50$volume)) ,
+        "Top 10k", (ahref_10kplus_scaled %>% head(9950) %$% sum(volume)) / sum(ns$real_volume) +  sum(top50$volume)
+        ) %>% 
+    write_csv("../plots/csv/top_volume.csv")
+```
+
+
+```{r}
+min = 0
+max = 50
+sql <- glue("SELECT SUM(COALESCE(keyword_info_search_volume / 10000, 0)) AS volume, COUNT(*) as count
+      FROM `dataforseo-bigquery.dataforseo_data.keyword_data` 
+      WHERE location = 2840 
+      AND spell = ''
+      AND keyword_info_search_volume >= {min}
+      AND keyword_info_search_volume < {max}")
+tb <- bq_project_query("dataforseo-bigquery", sql)
+df <- bq_table_download(tb) %>% mutate(min = min, max = max, volume = 10000 * volume)
+df$volume / sum(ns$real_volume)
+df$count / sum(ns$n_orig)
+```
+
+
+
+
+
+
+
