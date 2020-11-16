@@ -190,7 +190,7 @@ knitr::include_graphics(here::here("plots", "1611", "keyword_length_volume-1.png
 ```
 
 
-
+The mean keyword length in characters is 11.2, and the median is 8.5.
 
 
 <br>
