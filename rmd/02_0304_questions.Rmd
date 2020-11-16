@@ -1,0 +1,252 @@
+---
+title: "Questions"
+author: ""
+date: "Last updated on `r Sys.Date()`"
+output:
+  html_document:
+    theme: paper
+    highlight: kate
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+<style>
+.list-group-item.active, .list-group-item.active:hover, .list-group-item.active:focus {
+  background-color: #00d188;
+  border-color: #00d188;
+}
+
+body {
+  font-family: montserrat;
+  color: #444444;
+  font-size: 14px;
+}
+
+h1 {
+  font-weight: bold;
+  font-size: 28px;
+}
+
+h1.title {
+  font-size: 30px;
+  color: #00d188;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+h3 {
+  font-size: 18px;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/1611/", cache = F, fig.showtext = TRUE, dpi = 700)
+knitr::knit_hooks$set(inline = function(x) {
+  prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
+})
+Sys.setlocale("LC_TIME", "C")
+extrafont::loadfonts(device = "win")
+```
+
+
+
+```{r prep}
+set.seed(1)
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords", "magicfor", "gapminder")
+for(i in required_packages) { 
+  if(!require(i, character.only = T)) {
+    #  if package is not existing, install then load the package
+    install.packages(i, dependencies = T)
+  require(i, character.only = T)
+  }
+}
+panderOptions('table.alignment.default', "left")
+## quality of png's
+dpi <- 750
+## theme updates; please adjust to client´s website
+#theme_set(ggthemes::theme_clean(base_size = 15))
+theme_set(ggthemes::theme_clean(base_size = 15, base_family = "Montserrat"))
+theme_update(plot.margin = margin(30, 30, 30, 30),
+             plot.background = element_rect(color = "white",
+                                            fill = "white"),
+             plot.title = element_text(size = 20,
+                                       face = "bold",
+                                       lineheight = 1.05,
+                                       hjust = .5,
+                                       margin = margin(10, 0, 25, 0)),
+             plot.title.position = "plot",
+             plot.caption = element_text(color = "grey40",
+                                         size = 9,
+                                         margin = margin(20, 0, -20, 0)),
+             plot.caption.position = "plot",
+             axis.line.x = element_line(color = "black",
+                                        size = .8),
+             axis.line.y = element_line(color = "black",
+                                        size = .8),
+             axis.title.x = element_text(size = 16,
+                                         face = "bold",
+                                         margin = margin(t = 20)),
+             axis.title.y = element_text(size = 16,
+                                         face = "bold",
+                                         margin = margin(r = 20)),
+             axis.text = element_text(size = 11,
+                                      color = "black",
+                                      face = "bold"),
+             axis.text.x = element_text(margin = margin(t = 10)),
+             axis.text.y = element_text(margin = margin(r = 10)),
+             axis.ticks = element_blank(),
+             panel.grid.major.x = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.major.y = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.minor.x = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.minor.y = element_blank(),
+             panel.spacing.x = unit(4, "lines"),
+             panel.spacing.y = unit(2, "lines"),
+             legend.position = "top",
+             legend.title = element_text(family = "Montserrat",
+                                         color = "black",
+                                         size = 14,
+                                         margin = margin(5, 0, 5, 0)),
+             legend.text = element_text(family = "Montserrat",
+                                        color = "black",
+                                        size = 11,
+                                        margin = margin(4.5, 4.5, 4.5, 4.5)),
+             legend.background = element_rect(fill = NA,
+                                              color = NA),
+             legend.key = element_rect(color = NA, fill = NA),
+             #legend.key.width = unit(5, "lines"),
+             #legend.spacing.x = unit(.05, "pt"),
+             #legend.spacing.y = unit(.55, "pt"),
+             #legend.margin = margin(0, 0, 10, 0),
+             strip.text = element_text(face = "bold",
+                                       margin = margin(b = 10)))
+## theme settings for flipped plots
+theme_flip <-
+  theme(panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_line(size = .6,
+                                          color = "#eaeaea"))
+## theme settings for charts without y axis
+theme_blank <- 
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.line.y = element_blank(),
+        axis.text.y = element_blank())
+
+## numeric format for labels
+num_format <- scales::format_format(big.mark = ",", small.mark = ",", scientific = F)
+## main color backlinko
+bl_col <- "#00d188"
+bl_dark <- darken(bl_col, .3, space = "HLS")
+```
+
+
+
+
+```{r}
+overview <- read_csv("../proc_data/overview.csv")
+
+con <- dbConnect(
+    bigrquery::bigquery(),
+    project = "dataforseo-bigquery",
+    billing = "dataforseo-bigquery"
+)
+```
+
+
+
+
+
+
+# Questions
+
+
+```{r questions_volume, eval = F}
+question_words <- c("what", "which", "where", "who", "why", "how")
+write_questions_volume <- function(){
+  questions <- tribble(~question, ~volume)
+  for (word in question_words){
+    sql <- glue("SELECT sum(keyword_info_search_volume) FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+              WHERE location = 2840 
+              AND keyword like '% {word} %' OR keyword like '{word} %' OR keyword like '% {word}'")
+    tb <- bq_project_query("dataforseo-bigquery", sql)
+    df <- bq_table_download(tb) 
+    questions %<>% add_row(question = word, volume = df$f0_)
+  }
+  write_csv(questions, "../proc_data/questions_volume.csv")
+}
+#write_questions_volume()
+questions <- read_csv("../proc_data/questions_volume.csv")
+
+questions %>% mutate(prop = volume / overview$volume) %>% 
+  ggplot(aes(x = reorder(question, desc(prop)), y = prop)) +
+  geom_bar(stat = "identity", fill = bl_dark, color = "black") +
+  geom_text(aes(label = glue::glue("{format(round(prop, 4) * 100, scientific = FALSE)}%")),
+            nudge_y = .002, family = "Montserrat", fontface = "bold", color = "grey40") +
+  scale_x_discrete(expand = c(.12, .12)) +
+  scale_y_continuous(#labels = scales::label_percent(accuracy = 1), 
+                     #breaks = seq(0, .5, by = .1),
+                     expand = c(0, 0),
+                     limits = c(0, .054)) +
+  labs(title = "Questions in searches - by volume", x = NULL, y = NULL) +
+  theme_blank + 
+  theme(plot.title = element_text(margin = margin(b = 7))) +
+  ggsave(here::here("plots", "reworked", "questions_volume.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
+    
+```
+
+
+```{r questions}
+write_questions_count <- function(){
+  questions <- tribble(~question, ~n)
+  for (word in question_words){
+    sql <- glue("SELECT COUNT(keyword_info_search_volume) as n
+              FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+              WHERE location = 2840
+              AND keyword_info_search_volume > 0
+              AND keyword like '% {word} %' OR keyword like '{word} %' OR keyword like '% {word}'")
+    tb <- bq_project_query("dataforseo-bigquery", sql)
+    df <- bq_table_download(tb) 
+    questions %<>% add_row(question = word, n = df$n)
+  }  
+  write_csv(questions, "../proc_data/questions_count.csv")
+}
+#write_questions_count()
+questions <- read_csv("../proc_data/questions_count.csv")
+questions %>% mutate(prop = n / overview$count) %>% 
+  ggplot(aes(x = reorder(question, desc(prop)), y = prop)) +
+  geom_bar(stat = "identity", fill = bl_dark, color = "black") +
+  geom_text(aes(label = glue::glue("{format(round(prop, 4) * 100, scientific = FALSE)}%")),
+            nudge_y = .0025, family = "Montserrat", fontface = "bold", color = "grey40") +
+  scale_x_discrete(expand = c(.12, .12)) +
+  scale_y_continuous(#labels = scales::label_percent(accuracy = 1), 
+                     #breaks = seq(0, .5, by = .1),
+                     expand = c(0, 0),
+                     limits = c(0, .085)) +
+  labs(title = "Questions in searches", x = NULL, y = NULL) +
+  theme_blank + 
+  theme(plot.title = element_text(margin = margin(b = 7)))# +
+  #ggsave(here::here("plots", "reworked", "questions_count.pdf"),
+  #       width = 10, height = 6, device = cairo_pdf)
+```
+
+
+
+```{r}
+tibble("Total percentage of searches that are questions" = 
+         scales::percent(questions %$% sum(n) / overview$count, accuracy = 0.001)) %>% 
+  pander()
+```

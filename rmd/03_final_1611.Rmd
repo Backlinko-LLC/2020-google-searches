@@ -143,25 +143,21 @@ knitr::kable(title_description_table, caption = "High volume among top searches"
 
 ## 3.3 Spell types
 
-If a misspelling is recognized, a so-called spell type is suggested. There are three types of spell shown in the table below. 1.4% of searches have a spell type, but those that do have tend to have high volume. 
+If a misspelling is recognized, a so-called spell type is suggested. There are three types of spell shown in the table below. ~1.4% of searches have a spell type, but those that do have tend to have high volume. 
 
 ```{r spell_types_count, echo=FALSE}
 knitr::include_graphics(here::here("plots", "0911", "spell_types.png"))
 ```
 
+<br>
+<br>
 
 ## 3.4 Questions in searches
 
 ~14% of searches are in the form of a question. "how" is the most common question word.
 
 ```{r questions_count, echo=FALSE}
-knitr::include_graphics(here::here("plots", "0911", "questions_count.png"))
-```
-
-Although only about 1% of the total volume of searches are questions
-
-```{r questions_volume, echo=FALSE}
-knitr::include_graphics(here::here("plots", "0911", "questions_volume.png"))
+knitr::include_graphics(here::here("plots", "1611", "questions-1.png"))
 ```
 
 <br>
