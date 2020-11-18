@@ -466,20 +466,41 @@ countries %>% mutate(volume_prop = volume / countries %>% filter(country == "Uni
     geom_text(aes(label = glue::glue("{format(round(volume_prop, 3) * 100, scientific = FALSE)}%")), nudge_y = .008, family = "Montserrat", fontface = "bold", color = "grey40")
 ```
 
+```{r, eval = F}
+countries %<>% mutate(volume_per_pop = volume / pop)
+    mutate(volume_per_pop = volume / pop)
+
+countries %>% filter(country == "United States") %>% pull(volume_per_pop) / 
+    countries %>% filter(country == "United Kingdom") %>% pull(volume_per_pop)
+
+countries %>% filter(country == "United States") %>% pull(volume_per_pop) / 
+    countries %>% filter(country == "Canada") %>% pull(volume_per_pop)
+
+countries %>% filter(country == "United States") %>% pull(volume_per_pop) / 
+    countries %>% filter(country == "Australia") %>% pull(volume_per_pop)
+    
+
+countries
+```
+
+
 
 ```{r, countries_volume}
-countries %>% 
-    mutate(volume_per_pop = volume / pop) %>% 
-    mutate(country = case_when(
-        country == "United Kingdom" ~ "UK",
-        country == "United States" ~ "US",
-        T ~ country
-    )) %>% 
+countries %<>% 
+    mutate(volume_per_pop = volume / pop)
+    #mutate(country = case_when(
+    #    country == "United Kingdom" ~ "UK",
+    #    country == "United States" ~ "US",
+    #    T ~ country
+    #)) %>% 
+countries %>%     mutate(volume_per_pop = volume_per_pop / countries %>% filter(country == "United States") %>% pull(volume_per_pop)) %>% 
+    filter(country != "United States") %>% 
     ggplot(aes(x = reorder(country, volume_per_pop), y = volume_per_pop)) +
     geom_bar(stat = "identity", fill = bl_dark, width = 0.85, color = "black") +
-    scale_y_continuous( expand = c(.001, .001)) +
+    scale_y_continuous(labels = scales::percent, expand = c(.01, .01)) +
     theme(panel.grid.major.x = element_blank()) +
-    labs(y = "Search volume per person", x = NULL, title = "Search volume per person compared to US")
+    labs(y = "Search volume per person", x = NULL, title = "Search volume per person compared to US") +
+    geom_text(aes(label = glue::glue("{format(round(volume_per_pop, 3) * 100, scientific = FALSE)}%")), nudge_y = .04, family = "Montserrat", fontface = "bold", color = "grey40")
 ```
 
 

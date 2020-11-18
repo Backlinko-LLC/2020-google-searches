@@ -99,6 +99,8 @@ tbl <- tribble(~Statistic, ~Value,
 knitr::kable(tbl, caption = "Overview")
 ```
 
+(For how the volume was calculated, see appendix.)
+
 <br>
 
 # 3 Research Findings 
@@ -122,11 +124,7 @@ knitr::kable(title_description_table, caption = "Searches with highest volume")
 
 ## 3.2 Search volume
 
-The top searches have high volume compared to the remaining ~300 million.
-
-```{r search_tails, echo=FALSE}
-knitr::include_graphics(here::here("plots", "1611", "volume_by_searches-1.png"))
-```
+The search volume is concentrated among the top searches:
 
 
 ```{r high_volume}
@@ -136,6 +134,19 @@ title_description_table <- read.csv(here::here("plots", "csv", "top_volume.csv")
 knitr::kable(title_description_table, caption = "High volume among top searches")
 ```
 
+If we divide the searches into categories based on how much volume they receive, this gives an overview:
+
+
+```{r number_searches, echo=FALSE}
+knitr::include_graphics(here::here("plots", "1611", "proportion_searches-1.png"))
+```
+
+
+```{r volume_searches, echo=FALSE}
+knitr::include_graphics(here::here("plots", "1611", "proportion_search_volume-1.png"))
+```
+
+These figures together show that low volume searches (individual searches with volume less than 100), constitute 91.8% of all searches, but only 3.3% of all volume. Or stated in another way, 91.8% of keywords get 1-100 volume a month. Whereas very high volume searches (individual searches with volume above 10,000) constitute only 0.2% of all searches, but have 75.2% of all volume.
 
 <br>
 <br>
@@ -154,7 +165,7 @@ knitr::include_graphics(here::here("plots", "0911", "spell_types.png"))
 
 ## 3.4 Questions in searches
 
-~14% of searches are in the form of a question. "how" is the most common question word.
+14.1% of searches are in the form of a question. "how" is the most common question word.
 
 ```{r questions_count, echo=FALSE}
 knitr::include_graphics(here::here("plots", "1611", "questions-1.png"))
@@ -164,6 +175,8 @@ knitr::include_graphics(here::here("plots", "1611", "questions-1.png"))
 <br>
 
 ## 3.5 Stopwords
+
+A list of stopwords was qcquired from here: https://meta.wikimedia.org/wiki/Stop_word_list/google_stop_word_list#English
 
 "how" and "the" are the most common stopwords, which are present in 6-8% of searches.
 
@@ -181,7 +194,7 @@ knitr::include_graphics(here::here("plots", "0911", "stopwords_cloud_colors.png"
 <br>
 <br>
 
-## 3.6. Keyword length
+## 3.6. Length of search term
 
 The most searched queries have length 6-9 characters, and falls continuously for search queries longer or shorter than that.
 
@@ -193,13 +206,13 @@ knitr::include_graphics(here::here("plots", "1611", "keyword_length_volume-1.png
 The mean keyword length in characters is 11.2, and the median is 8.5.
 
 
-<br>
-
-Search phrases with fewer words have higher volume
-
-```{r keyword_word_volume, echo=FALSE}
-knitr::include_graphics(here::here("plots", "0911", "keyword_word_volume.png"))
+```{r keyword_words_volume, echo=FALSE}
+knitr::include_graphics(here::here("plots", "1611", "keyword_words_volume-1.png"))
 ```
+
+Most searches consist of a single word, with volume quickly falling as the number of words increase.
+
+Search terms that are 1-3 words in length get ~10x as much volume on average as search terms that are 5+ words in length.
 
 <br>
 <br>
@@ -209,24 +222,28 @@ knitr::include_graphics(here::here("plots", "0911", "keyword_word_volume.png"))
 Internet & Telecom is the keyword category with the highest mean volume.
 
 ```{r volume_mean_category_ordered, echo=FALSE}
-knitr::include_graphics(here::here("plots", "0911", "volume_mean_category_ordered.png"))
+knitr::include_graphics(here::here("plots", "1611", "search_category_total_volume-1.png"))
 ```
 
+([data table](https://github.com/danielkupka/2020-google-searches/blob/master/proc_data/categories_averages.csv))
 
 
 Arts & Entertainment, Internet & Telecom, and News, Media & Publications have the highest total volume.
 
 ```{r volume_total_category_ordered, echo=FALSE}
-knitr::include_graphics(here::here("plots", "0911", "volume_total_category_ordered.png"))
+knitr::include_graphics(here::here("plots", "1611", "search_category_volume_mean-1.png"))
 ```
 
+([data table](https://github.com/danielkupka/2020-google-searches/blob/master/proc_data/categories_total_volume.csv))
 
 Finance has the highest mean cost per click.
 
 
 ```{r search_category_cpc_ordered, echo=FALSE}
-knitr::include_graphics(here::here("plots", "0911", "cpc_mean_category_ordered.png"))
+knitr::include_graphics(here::here("plots", "1611", "search_category_cpc_mean-1.png"))
 ```
+
+([data table](https://github.com/danielkupka/2020-google-searches/blob/master/proc_data/categories_cpc.csv))
 
 The average CPC for all searches is 0.61
 
@@ -235,6 +252,10 @@ The average CPC for all searches is 0.61
 <br>
 
 ## 3.8 Keyword difficulty
+
+Description of keyword difficulty from *ahref*:
+
+> Keyword Difficulty (KD) effectively tells you the average height (backlink profile strength) of the other players in the game (top-ranking pages). The higher the number, the more height (backlinks) you'll likely to need to stand a chance of ranking.
 
 
 As volume increases, the difficulty increases.
@@ -269,9 +290,13 @@ knitr::include_graphics(here::here("plots", "0911", "difficulty_cpc_boxplot.png"
 
 ## 3.9 SERP features
 
-(Note there are (at least) two additional SERP feature types (*Knowledge Panel* and *Videos*), for which the sample size is too small to include.)
+Search Engine Results Pages (SERPs) are the pages that Google and other search engines show in response to a user’s search query.
 
-The SERP features featured in the most searches are *Image pack* and *People also ask*:
+97.6% of the SERPs contain at least one SERP feature.
+
+The figure below gives an overview of how often the different SERP features are shown. (Note there are (at least) two additional SERP feature types (*Knowledge Panel* and *Videos*), for which the sample size is too small to include.)
+
+The SERP features shown in the most searches are *Image pack* and *People also ask*:
 
 ```{r serp_presence_repr, echo=FALSE}
 knitr::include_graphics(here::here("plots", "0911", "serp_presence.png"))
@@ -320,11 +345,19 @@ knitr::include_graphics(here::here("plots", "0911", "serp_mean_difficulty.png"))
 
 ## 3.10 Return rate
 
+> Return Rate shows how often the same person searches for a given keyword over a 30-day period. A return rate of 1 means that people typically don't search for that keyword again within 30 days.
 
-We can see that searches with high return rates tend to have lower difficulty, and to be clicked on a lot more.
+We arbitrarily grouped return rate into three groups, No significant return rate (< 2), medium (2-10) and high (10+). Then we look at searches that have similar volume, but different return rate.
+
+As the return rate increases, the number of clicks increases and the cost per click increases.
 
 ```{r return_rate, echo=FALSE}
-title_description_table <- read.csv(here::here("plots", "csv", "return_rate.csv"), stringsAsFactors=F)
+title_description_table <- read.csv(here::here("plots", "csv", "return_rate.csv"), stringsAsFactors=F) %>% 
+    rename("Return rate" = return_rate,
+           "Mean return rate" = mean_return_rate,
+           "Mean CPC" = mean_cpc,
+           "Mean clicks" = mean_clicks,
+           "Mean difficulty" = mean_difficulty)
 knitr::kable(title_description_table, caption = "Comparison of searches with same volume but different return rates")
 ```
 
@@ -338,10 +371,16 @@ knitr::kable(title_description_table, caption = "Comparison of searches with sam
 
 There is search data from 5 English-speaking countries.
 
-Of those, US and UK have the highest search volume per person.
+Of those, US and UK have the highest search volume per person. Americans use google 38% more than UK, 108% more than Canada and 90% more than Australia, when adjusted for population.
 
 ```{r countries_volume, echo=FALSE}
-knitr::include_graphics(here::here("plots", "0911", "countries_volume.png"))
+knitr::include_graphics(here::here("plots", "1611", "countries_volume-1.png"))
+```
+US of course has much higher total search volume overall:
+
+
+```{r countries_volume_prop, echo=FALSE}
+knitr::include_graphics(here::here("plots", "1611", "search_volume_vs_us-1.png"))
 ```
 
 US has significantly higher cost per click on average
@@ -429,3 +468,5 @@ Many of these are people featured in Google doodles
 title_description_table <- vroom::vroom(here::here("plots", "csv", "spikes.csv"))
 knitr::kable(title_description_table, caption = "Searches with highest difference in search volume over time")
 ```
+
+

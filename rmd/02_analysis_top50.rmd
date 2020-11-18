@@ -247,8 +247,17 @@ count <- map2_df(c(0, 100, 500, 1000, 10000), c(100, 500, 1000, 10000, 100000000
 
 n_orig <- inner_join(volume, count, by = "cat") %>% 
     rename(n_orig = count_orig)
-n_orig
+n_orig %>% 
+    mutate(n_prop = n_orig / sum(n_orig),
+           vol_prop = volume_orig / sum(volume_orig))
 ```
+
+```{r}
+n_orig_prop <- n_orig %>% 
+    mutate(volume_prop = volume_orig / sum(volume_orig),
+           n_prop = n_orig / sum(n_orig))
+```
+
 
 Overview of volume and count in the two datasets
 
@@ -449,8 +458,78 @@ df$count / sum(ns$n_orig)
 ```
 
 
+```{r}
+tibble(volume = sum(ns$real_volume),
+       count = 306000000) %>% 
+    write_csv("../proc_data/overview.csv")
+```
+
+
+```{r}
+ns %>% mutate(
+    vol_prop = volume_orig / sum(volume_orig),
+    n_prop = n_orig / sum(n_orig))
+```
+
+
+```{r search_tails}
+get_count_range <-  function(lower, higher)
+{
+  sql <- glue(
+        "SELECT COUNT(*) AS `count`,  
+         FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+         WHERE location = 2840 
+         AND spell = ''
+         AND keyword_info_search_volume > {lower} 
+         AND keyword_info_search_volume <= {higher}")
+      tb <- bq_project_query("dataforseo-bigquery", sql)
+      bq_table_download(tb)$count
+}
+df <- tribble(
+  ~cat, ~count,
+  "0 - 10", get_count_range(0, 10),
+  "11- 100", get_count_range(11, 100),
+  "101 - 1000", get_count_range(101, 1000),
+  "1001 - 10000", get_count_range(1001, 10000),
+  "10001 - 100000", get_count_range(10001, "100000"),
+  "100001+", get_count_range("100001", "100000000000")) 
+
+n_orig_prop %<>% 
+    mutate(ncat = case_when(
+        cat == "0-100" ~ "1-100",
+        cat == "100-500" ~ "100-1000",
+        cat == "500-1000" ~ "100-1000",
+        cat == "1000-10000" ~ "1000-10000",
+        cat == "10000+" ~ "10000+",
+    )) %>% 
+    group_by(ncat) %>% 
+    summarise(volume_prop = sum(volume_prop),
+              n_prop = sum(n_prop)) %>% 
+    mutate(cat = factor(ncat, levels = c("1-100", "100-1000", "1000-10000", "10000+")))
+```
+
+```{r proportion_search_volume}
+n_orig_prop %>% 
+  ggplot(aes(x = cat, y = volume_prop)) +
+  geom_bar(stat = "identity", fill = bl_dark, color = "black", width = .85) +
+  geom_text(aes(label = glue::glue("{format(round(volume_prop, 3) * 100, scientific = FALSE)}%")),
+            nudge_y = .04, family = "Montserrat", fontface = "bold", color = "grey40", size = 3) +
+  theme(panel.grid.major.x = element_blank()) +
+  labs(x = "Search volume category", y = "Percentage of all search volume", title = "Volume of searches") +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0.001, 0.001))
+```
 
 
 
+```{r proportion_searches}
+n_orig_prop %>% 
+  ggplot(aes(x = cat, y = n_prop)) +
+  geom_bar(stat = "identity", fill = bl_dark, color = "black", width = .85) +
+  geom_text(aes(label = glue::glue("{format(round(n_prop, 3) * 100, scientific = FALSE)}%")),
+            nudge_y = .04, family = "Montserrat", fontface = "bold", color = "grey40", size = 3) +
+  theme(panel.grid.major.x = element_blank()) +
+  labs(x = "Search volume category", y = "Percentage of all searches", title = "Number of searches") +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0.001, 0.001))
+```
 
 

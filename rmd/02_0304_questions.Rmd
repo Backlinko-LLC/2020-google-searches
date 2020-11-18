@@ -168,8 +168,6 @@ con <- dbConnect(
 
 
 
-
-
 # Questions
 
 
@@ -180,15 +178,16 @@ write_questions_volume <- function(){
   for (word in question_words){
     sql <- glue("SELECT sum(keyword_info_search_volume) FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
               WHERE location = 2840 
+              AND spell = ''
               AND keyword like '% {word} %' OR keyword like '{word} %' OR keyword like '% {word}'")
     tb <- bq_project_query("dataforseo-bigquery", sql)
     df <- bq_table_download(tb) 
     questions %<>% add_row(question = word, volume = df$f0_)
   }
-  write_csv(questions, "../proc_data/questions_volume.csv")
+  write_csv(questions, "../proc_data/questions_volume_nospell.csv")
 }
 #write_questions_volume()
-questions <- read_csv("../proc_data/questions_volume.csv")
+questions <- read_csv("../proc_data/questions_volume_nospell.csv")
 
 questions %>% mutate(prop = volume / overview$volume) %>% 
   ggplot(aes(x = reorder(question, desc(prop)), y = prop)) +
@@ -200,11 +199,12 @@ questions %>% mutate(prop = volume / overview$volume) %>%
                      #breaks = seq(0, .5, by = .1),
                      expand = c(0, 0),
                      limits = c(0, .054)) +
+  #labs(title = "Questions in searches - by volume", x = NULL, y = NULL) +
   labs(title = "Questions in searches - by volume", x = NULL, y = NULL) +
   theme_blank + 
-  theme(plot.title = element_text(margin = margin(b = 7))) +
-  ggsave(here::here("plots", "reworked", "questions_volume.pdf"),
-         width = 10, height = 6, device = cairo_pdf)
+  theme(plot.title = element_text(margin = margin(b = 7)))# +
+  #ggsave(here::here("plots", "reworked", "questions_volume.pdf"),
+  #       width = 10, height = 6, device = cairo_pdf)
     
 ```
 
@@ -225,6 +225,7 @@ write_questions_count <- function(){
   write_csv(questions, "../proc_data/questions_count.csv")
 }
 #write_questions_count()
+
 questions <- read_csv("../proc_data/questions_count.csv")
 questions %>% mutate(prop = n / overview$count) %>% 
   ggplot(aes(x = reorder(question, desc(prop)), y = prop)) +

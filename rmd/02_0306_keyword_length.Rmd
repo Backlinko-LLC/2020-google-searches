@@ -1,5 +1,12 @@
 ---
-title: "Keyword length"
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+---
+title: "Keyword landscape analysis"
 author: ""
 date: "Last updated on `r Sys.Date()`"
 output:
@@ -60,7 +67,7 @@ extrafont::loadfonts(device = "win")
 
 ```{r prep}
 set.seed(1)
-required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords", "magicfor", "gapminder")
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords", "magicfor", "gapminder", "spatstat")
 for(i in required_packages) { 
   if(!require(i, character.only = T)) {
     #  if package is not existing, install then load the package
@@ -153,22 +160,7 @@ bl_dark <- darken(bl_col, .3, space = "HLS")
 ```
 
 
-
-
-```{r}
-overview <- read_csv("../proc_data/overview.csv")
-
-con <- dbConnect(
-    bigrquery::bigquery(),
-    project = "dataforseo-bigquery",
-    billing = "dataforseo-bigquery"
-)
-```
-
-
-
 # Keyword length
-
 
 ```{r}
 write_length_volume <- function()
@@ -181,6 +173,7 @@ write_length_volume <- function()
            WHERE location = 2840
            AND keyword_info_search_volume IS NOT NULL
            AND spell = ''
+           AND keyword_info_search_volume > 0
            AND LENGTH(keyword) = {l}")
         tb <- bq_project_query("dataforseo-bigquery", sql)
         bq_table_download(tb) %>% mutate(length = l, volume = volume * 10000)
@@ -192,29 +185,126 @@ write_length_volume <- function()
 #write_length_volume()
 ```
 
+```{r}
+write_length_volume <- function()
+{
+  get_length_volume <-  function(l)
+  {
+    sql <- glue(
+          "SELECT SUM(COALESCE(keyword_info_search_volume / 10000, 0)) as `volume`, count(keyword_info_search_volume) as `count`
+           FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+           WHERE location = 2840
+           AND keyword_info_search_volume IS NOT NULL
+           AND keyword_info_search_volume > 0
+           AND spell = ''
+           AND (LENGTH(keyword) - LENGTH(replace(keyword, ' ', ''))) = {l}")
+        tb <- bq_project_query("dataforseo-bigquery", sql)
+        bq_table_download(tb) %>% mutate(length = l, volume = volume * 10000)
+  }
+  
+  df <- map_df(1:40, get_length_volume)  
+  write_csv(df, "../proc_data/keyword_word_volume.csv")
+}
+#write_length_volume()
+```
+
+
 
 ```{r keyword_length_volume, fig.width = 10, fig.height = 6}
-df <- read_csv("../proc_data/keyword_length_volume.csv") %>% 
+kw_length <- read_csv("../proc_data/keyword_length_volume.csv") %>% 
     drop_na()
 
-df %>% filter(length <= 50) %>% 
+kw_length %>% filter(length <= 50) %>% 
     mutate(prop = volume / sum(volume)) %>% 
     ggplot(aes(x = length, y = prop)) +
     geom_line(color = colorspace::desaturate(bl_col, .35), size = 1) + 
     geom_point(color = bl_dark, size = 2.5) +
     scale_x_continuous(expand = c(.008, .008)) +
     scale_y_continuous(labels = scales::label_percent(accuracy = 1), breaks = seq(0, .14, by = .02)) +
-    labs(x = "Keyword length (in characters)", y = "Total search volume", title = "Search volume by keyword length") +
+    labs(x = "Search term length (in characters)", y = "Proportion of total search volume", title = "Search volume by length of search term") +
     theme(panel.grid.minor.x = element_blank())
 ```
 
 ```{r, render = pander}
 tbl <- tibble(
-    mean = round(weighted.mean(df$length, df$volume), 1),
-    median = round(spatstat::weighted.median(df$length, df$volume), 1)
+    mean = round(weighted.mean(kw_length$length, kw_length$volume), 1),
+    median = round(spatstat::weighted.median(kw_length$length, kw_length$volume), 1)
 ) 
 tbl %>% write_csv("../plots/csv/keyword_length.csv")
 tbl
 ```
 
+```{r keyword_length_count, fig.width = 10, fig.height = 6}
+kw_length %>% filter(length <= 50) %>% 
+    mutate(prop = count / sum(count)) %>% 
+    ggplot(aes(x = length, y = prop)) +
+    geom_line(color = colorspace::desaturate(bl_col, .35), size = 1) + 
+    geom_point(color = bl_dark, size = 2.5) +
+    scale_x_continuous(expand = c(.008, .008)) +
+    scale_y_continuous(labels = scales::label_percent(accuracy = 1), breaks = seq(0, .14, by = .02)) +
+    labs(x = "Search term length (in characters)", y = "Proportion of total search volume", title = "Search volume by length of search term") +
+    theme(panel.grid.minor.x = element_blank())
+```
+
+
+
+```{r keyword_words_volume, fig.width = 10, fig.height = 6}
+kw_words <- vroom("../proc_data/keyword_word_volume.csv") %>% 
+    drop_na()
+
+kw_words %>% 
+    mutate(prop = volume / sum(volume)) %>% 
+    filter(length <= 8) %>% 
+    ggplot(aes(x = length, y = prop)) +
+    geom_line(color = colorspace::desaturate(bl_col, .35), size = 1) + 
+    geom_point(color = bl_dark, size = 2.5) +
+    scale_x_continuous(expand = c(.008, .008), breaks = seq(0, 10, by = 1)) +
+    scale_y_continuous(labels = scales::label_percent(accuracy = 1), breaks = seq(0, .6, by = .1)) +
+    labs(x = "Search term length (in words)", y = "Proportion of total search volume", title = "Search volume by number of words in search term") +
+    theme(panel.grid.minor.x = element_blank())
+```
+
+```{r, render = pander}
+tbl <- tibble(
+    mean = round(weighted.mean(kw_words$length, kw_words$volume), 1),
+    median = round(spatstat::weighted.median(kw_words$length,kw_words$volume), 1)
+) 
+tbl %>% write_csv("../plots/csv/keyword_count.csv")
+tbl
+```
+
+
+Figure out how much more volume is from searches with 5+ words compared to 3 or less.
+
+```{r}
+kw_words %>% mutate(
+    cat = case_when(
+        length <= 3 ~ "<= 3",
+        length >= 6 ~ ">= 5"
+)) %>% 
+    group_by(cat) %>% 
+    summarise(vol = sum(volume),
+              n = sum(count)) %>% 
+    drop_na() %>% 
+    mutate(ratio = vol / n)
+```
+
+```{r}
+279.01025 / 27.23202
+```
+
+
+
+```{r keyword_words_count, fig.width = 10, fig.height = 6}
+kw_words %>% 
+    mutate(prop = count / sum(count)) %>% 
+    filter(length <= 8) %>% 
+    ggplot(aes(x = length, y = prop)) +
+    geom_line(color = colorspace::desaturate(bl_col, .35), size = 1) + 
+    geom_point(color = bl_dark, size = 2.5) +
+    scale_x_continuous(expand = c(.008, .008), breaks = seq(0, 10, by = 1)) +
+    scale_y_continuous(labels = scales::label_percent(accuracy = 1), breaks = seq(0, .6, by = .1)) +
+    labs(x = "Search term length (in words)", y = "Proportion of total search volume", title = "Search volume by number of words in search term") +
+    theme(panel.grid.minor.x = element_blank())
+```
 

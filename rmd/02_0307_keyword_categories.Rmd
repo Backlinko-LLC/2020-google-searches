@@ -1,0 +1,310 @@
+---
+title: "Keyword_info categories"
+author: ""
+date: "Last updated on `r Sys.Date()`"
+output:
+  html_document:
+    theme: paper
+    highlight: kate
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+<style>
+.list-group-item.active, .list-group-item.active:hover, .list-group-item.active:focus {
+  background-color: #00d188;
+  border-color: #00d188;
+}
+
+body {
+  font-family: montserrat;
+  color: #444444;
+  font-size: 14px;
+}
+
+h1 {
+  font-weight: bold;
+  font-size: 28px;
+}
+
+h1.title {
+  font-size: 30px;
+  color: #00d188;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+h3 {
+  font-size: 18px;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/1611/", cache = F, fig.showtext = TRUE, dpi = 700)
+knitr::knit_hooks$set(inline = function(x) {
+  prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
+})
+Sys.setlocale("LC_TIME", "C")
+extrafont::loadfonts(device = "win")
+```
+
+
+
+```{r prep}
+set.seed(1)
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords", "magicfor", "gapminder")
+for(i in required_packages) { 
+  if(!require(i, character.only = T)) {
+    #  if package is not existing, install then load the package
+    install.packages(i, dependencies = T)
+  require(i, character.only = T)
+  }
+}
+panderOptions('table.alignment.default', "left")
+## quality of png's
+dpi <- 750
+## theme updates; please adjust to client´s website
+#theme_set(ggthemes::theme_clean(base_size = 15))
+theme_set(ggthemes::theme_clean(base_size = 15, base_family = "Montserrat"))
+theme_update(plot.margin = margin(30, 30, 30, 30),
+             plot.background = element_rect(color = "white",
+                                            fill = "white"),
+             plot.title = element_text(size = 20,
+                                       face = "bold",
+                                       lineheight = 1.05,
+                                       hjust = .5,
+                                       margin = margin(10, 0, 25, 0)),
+             plot.title.position = "plot",
+             plot.caption = element_text(color = "grey40",
+                                         size = 9,
+                                         margin = margin(20, 0, -20, 0)),
+             plot.caption.position = "plot",
+             axis.line.x = element_line(color = "black",
+                                        size = .8),
+             axis.line.y = element_line(color = "black",
+                                        size = .8),
+             axis.title.x = element_text(size = 16,
+                                         face = "bold",
+                                         margin = margin(t = 20)),
+             axis.title.y = element_text(size = 16,
+                                         face = "bold",
+                                         margin = margin(r = 20)),
+             axis.text = element_text(size = 11,
+                                      color = "black",
+                                      face = "bold"),
+             axis.text.x = element_text(margin = margin(t = 10)),
+             axis.text.y = element_text(margin = margin(r = 10)),
+             axis.ticks = element_blank(),
+             panel.grid.major.x = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.major.y = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.minor.x = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.minor.y = element_blank(),
+             panel.spacing.x = unit(4, "lines"),
+             panel.spacing.y = unit(2, "lines"),
+             legend.position = "top",
+             legend.title = element_text(family = "Montserrat",
+                                         color = "black",
+                                         size = 14,
+                                         margin = margin(5, 0, 5, 0)),
+             legend.text = element_text(family = "Montserrat",
+                                        color = "black",
+                                        size = 11,
+                                        margin = margin(4.5, 4.5, 4.5, 4.5)),
+             legend.background = element_rect(fill = NA,
+                                              color = NA),
+             legend.key = element_rect(color = NA, fill = NA),
+             #legend.key.width = unit(5, "lines"),
+             #legend.spacing.x = unit(.05, "pt"),
+             #legend.spacing.y = unit(.55, "pt"),
+             #legend.margin = margin(0, 0, 10, 0),
+             strip.text = element_text(face = "bold",
+                                       margin = margin(b = 10)))
+## theme settings for flipped plots
+theme_flip <-
+  theme(panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_line(size = .6,
+                                          color = "#eaeaea"))
+## theme settings for charts without y axis
+theme_blank <- 
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.line.y = element_blank(),
+        axis.text.y = element_blank())
+
+## numeric format for labels
+num_format <- scales::format_format(big.mark = ",", small.mark = ",", scientific = F)
+## main color backlinko
+bl_col <- "#00d188"
+bl_dark <- darken(bl_col, .3, space = "HLS")
+```
+
+
+
+
+```{r}
+overview <- read_csv("../proc_data/overview.csv")
+
+con <- dbConnect(
+    bigrquery::bigquery(),
+    project = "dataforseo-bigquery",
+    billing = "dataforseo-bigquery"
+)
+```
+
+
+
+
+
+# Keyword_info categories
+
+```{r}
+pservices <- read_csv("../raw_data/productsservices.csv") %>% 
+  clean_names() %>% rename(c1 = criterion_id) %>% select(-category) %>% 
+  separate(c1, sep =",\"", into = c("id", "category")) %>% 
+  mutate(category = substr(category, 2, nchar(category) -1)) %>% 
+  separate(category, sep = "/", into = c("cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8"))
+toplevel <- pservices %>% filter(is.na(cat2))
+```
+
+
+
+```{r}
+write_categories <- function()
+{
+  get_category_volume <-  function(id){
+    sql <- glue(
+      "SELECT Avg(keyword_info_search_volume) AS `search_volume`, COUNT(*) AS `count`
+       FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+       WHERE location = 2840 
+       AND spell = ''
+       AND keyword_info_categories like '%{id}%' ")
+    tb <- bq_project_query("dataforseo-bigquery", sql)
+    bq_table_download(tb) %>% mutate(id = id)
+  }
+  df <- map_df(toplevel$id, get_category_volume)  
+  
+  df %>% mutate(search_volume = search_volume * 10000,
+                mean_volume = search_volume / count
+                ) %>% 
+    left_join(toplevel %>% select(id, cat1), by = "id") %>% 
+    write_csv("../proc_data/categories_averages.csv")
+}
+write_categories()
+df <- read_csv("../proc_data/categories_averages.csv")
+```
+
+
+```{r search_category_volume_mean, fig.height = 10, fig.width = 7.5}
+df %>% 
+  ggplot(aes(x = fct_reorder(cat1, mean_volume), y = mean_volume)) +
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  coord_flip() + 
+  theme_flip +
+  theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
+  scale_y_continuous(limits = c(0, 3500), expand = c(0,0), breaks = seq(0, 3000, by = 1000)) +
+  labs(x = NULL, y = NULL, title = "Search volume mean by category")
+```
+
+!!!D: I would be curious to see the same graph with median. Wouldn´t it be better to use median given the skewed data set? 
+
+!!!J: I am skeptical for using the median, since it is brought far down by a large number of searches with low volume, even when we exclude 0 volume searches. Remember, the median cpc overall was 0. But you are right that it is an issue with the skewed data set.
+
+!!!D: Maybe a boxplot or something similiar would make more sense here? Or something like that: https://tinyurl.com/yxfwo5vt Leave that out if it´s too complicated to implement.  
+
+
+```{r}
+write_categories_volume <- function()
+{
+  get_category_volume <-  function(id){
+    sql <- glue(
+      "SELECT SUM(COALESCE(keyword_info_search_volume / 10000, 0)) as volume
+       FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+       WHERE location = 2840 
+       AND spell = ''
+       AND keyword_info_search_volume > 0
+       AND keyword_info_categories like '%{id}%' ")
+    tb <- bq_project_query("dataforseo-bigquery", sql)
+    bq_table_download(tb) %>% mutate(id = id)
+  }
+  df <- map_df(toplevel$id, get_category_volume) %>% 
+    mutate(volume = volume * 10000)
+  
+  df %>% left_join(toplevel %>% select(id, cat1), by = "id") %>% 
+    write_csv("../proc_data/categories_total_volume.csv")
+}
+#write_categories_volume()
+df <- read_csv("../proc_data/categories_total_volume.csv")
+```
+
+<br>
+
+```{r search_category_total_volume, fig.height = 10, fig.width = 7.5}
+df %>% 
+  mutate(volume = volume / sum(volume)) %>% 
+  ggplot(aes(x = fct_reorder(cat1, volume), y = volume)) +
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  coord_flip() + 
+  theme_flip +
+  theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
+  scale_y_continuous(limits = c(0, .2), expand = c(0,0), labels = scales::percent) +
+  labs(x = NULL, y = NULL, title = "Total search volume by category") +
+  ggsave(here::here("plots", "reworked", "volume_total_category_ordered.pdf"),
+         width = 10, height = 7.5, device = cairo_pdf)
+```
+
+<br>
+
+```{r}
+write_categories <- function()
+{
+  get_category <-  function(id){
+    sql <- glue(
+      "SELECT AVG(keyword_info_cpc) as mean_cpc
+       FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+       WHERE location = 2840 
+       AND spell = ''
+       AND keyword_info_search_volume > 0
+       AND keyword_info_categories like '%{id}%' ")
+    tb <- bq_project_query("dataforseo-bigquery", sql)
+    bq_table_download(tb) %>% mutate(id = id)
+  }
+  df <- map_df(toplevel$id, get_category)  
+  
+  df %>% left_join(toplevel %>% select(id, cat1), by = "id") %>% 
+    write_csv("../proc_data/categories_cpc.csv")
+}
+write_categories()
+df <- read_csv("../proc_data/categories_cpc.csv")
+```
+
+<br>
+
+```{r search_category_cpc_mean, fig.height = 10, fig.width = 6.5}
+df %>% 
+  ggplot(aes(x = fct_reorder(cat1, mean_cpc), y = mean_cpc)) +
+  geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  coord_flip() + 
+  theme_flip +
+  theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
+  scale_y_continuous(limits = c(0, 2), expand = c(0,0)) +
+  labs(x = NULL, y = NULL, title = "Mean CPC by category") +
+  ggsave(here::here("plots", "reworked", "cpc_mean_category_ordered.pdf"),
+         width = 10, height = 6.5, device = cairo_pdf)
+```
+
+<br>
+
