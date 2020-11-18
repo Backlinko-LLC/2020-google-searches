@@ -1,0 +1,501 @@
+---
+title: "Keyword landscape analysis - ahrefs"
+author: ""
+date: "Last updated on `r Sys.Date()`"
+output:
+  html_document:
+    theme: paper
+    highlight: kate
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+<style>
+.list-group-item.active, .list-group-item.active:hover, .list-group-item.active:focus {
+  background-color: #00d188;
+  border-color: #00d188;
+}
+
+body {
+  font-family: montserrat;
+  color: #444444;
+  font-size: 14px;
+}
+
+h1 {
+  font-weight: bold;
+  font-size: 28px;
+}
+
+h1.title {
+  font-size: 30px;
+  color: #00d188;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+h3 {
+  font-size: 18px;
+}
+</style>
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/1611/", cache = F, fig.showtext = TRUE, dpi = 700)
+
+knitr::knit_hooks$set(inline = function(x) {
+  prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
+})
+
+Sys.setlocale("LC_TIME", "C")
+extrafont::loadfonts(device = "win")
+```
+
+
+```{r prep}
+set.seed(2)
+
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "ggridges", "spatstat", "broom", "arrow", "magicfor", "gapminder")
+for(i in required_packages) { 
+  if(!require(i, character.only = T)) {
+    #  if package is not existing, install then load the package
+    install.packages(i, dependencies = T)
+  require(i, character.only = T)
+  }
+}
+
+panderOptions('table.alignment.default', "left")
+
+## quality of png's
+dpi <- 750
+
+## theme updates; please adjust to client´s website
+#theme_set(ggthemes::theme_clean(base_size = 15))
+theme_set(ggthemes::theme_clean(base_size = 15))
+theme_update(plot.margin = margin(30, 30, 30, 30),
+             plot.background = element_rect(color = "white",
+                                            fill = "white"),
+             plot.title = element_text(size = 20,
+                                       face = "bold",
+                                       lineheight = 1.05,
+                                       hjust = .5,
+                                       margin = margin(10, 0, 25, 0)),
+             plot.title.position = "plot",
+             plot.caption = element_text(color = "grey40",
+                                         size = 9,
+                                         margin = margin(20, 0, -20, 0)),
+             plot.caption.position = "plot",
+             axis.line.x = element_line(color = "black",
+                                        size = .8),
+             axis.line.y = element_line(color = "black",
+                                        size = .8),
+             axis.title.x = element_text(size = 16,
+                                         face = "bold",
+                                         margin = margin(t = 20)),
+             axis.title.y = element_text(size = 16,
+                                         face = "bold",
+                                         margin = margin(r = 20)),
+             axis.text = element_text(size = 11,
+                                      color = "black",
+                                      face = "bold"),
+             axis.text.x = element_text(margin = margin(t = 10)),
+             axis.text.y = element_text(margin = margin(r = 10)),
+             axis.ticks = element_blank(),
+             panel.grid.major.x = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.major.y = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.minor.x = element_line(size = .6,
+                                               color = "#eaeaea",
+                                               linetype = "solid"),
+             panel.grid.minor.y = element_blank(),
+             panel.spacing.x = unit(4, "lines"),
+             panel.spacing.y = unit(2, "lines"),
+             legend.position = "top",
+             legend.title = element_text(family = "Montserrat",
+                                         color = "black",
+                                         size = 14,
+                                         margin = margin(5, 0, 5, 0)),
+             legend.text = element_text(family = "Montserrat",
+                                        color = "black",
+                                        size = 11,
+                                        margin = margin(4.5, 4.5, 4.5, 4.5)),
+             legend.background = element_rect(fill = NA,
+                                              color = NA),
+             legend.key = element_rect(color = NA, fill = NA),
+             #legend.key.width = unit(5, "lines"),
+             #legend.spacing.x = unit(.05, "pt"),
+             #legend.spacing.y = unit(.55, "pt"),
+             #legend.margin = margin(0, 0, 10, 0),
+             strip.text = element_text(face = "bold",
+                                       margin = margin(b = 10)))
+## theme settings for flipped plots
+theme_flip <-
+  theme(panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_line(size = .6,
+                                          color = "#eaeaea"))
+## theme settings for charts without y axis
+theme_blank <- 
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.line.y = element_blank(),
+        axis.text.y = element_blank())
+
+## numeric format for labels
+num_format <- scales::format_format(big.mark = ",", small.mark = ",", scientific = F)
+## main color backlinko
+bl_col <- "#00d188"
+bl_dark <- darken(bl_col, .3, space = "HLS")
+```
+
+
+# Read data
+
+```{r}
+df <- read_feather("../proc_data/ahref/ahref.f")
+```
+
+
+
+
+# Global volume
+
+```{r}
+dfv <- 
+  bind_rows(
+    df %>% mutate(region = "US"),
+    df %>% mutate(volume = global_volume - volume, region = "International")
+    )
+```
+
+In *ahref*, international volume is higher:
+
+```{r}
+dfv %>% group_by(region) %>% 
+  summarise(volume = sum(volume, na.rm = T)) %>% 
+  mutate(volume = scales::percent(volume / sum(volume))) %>% 
+  pander()
+```
+
+However, in the original data set, US volume is much higher:
+
+
+```{r}
+tribble(~region, ~volume,
+        "US", "82%",
+        "International", "19%")
+```
+
+I will be going by *ahref* in the following.
+
+Internationally there are more searches with very low volume, while US has more searches with medium volume.
+
+
+
+
+```{r comparison_count, fig.width = 10, fig.height = 6}
+dfv %>% drop_na(volume) %>% 
+  mutate(volume_group = case_when(volume < 100 ~ "< 100",
+    between(volume, 100, 1000) ~ "100 - 1000",
+    between(volume, 1000, 10000) ~ "1000 - 10,000",
+    volume > 10000 ~ "10,000 +")) %>% 
+  mutate(volume_group = factor(volume_group, levels = c("< 100", "100 - 1000", "1000 - 10,000", "10,000 +"))) %>% 
+  group_by(volume_group, region) %>% 
+  summarise(n = n()) %>% 
+  ungroup() %>% 
+  mutate(n = n / sum(n)) %>% 
+  ggplot(aes(x = volume_group, y = n, fill = region)) +
+  geom_bar(stat = "identity", position = position_dodge(), width = 0.8, color = "black") +
+  labs(fill = "Region", x = "Volume", y = NULL) +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0)) +
+  scale_fill_manual(values = c("grey70", bl_col), name = NULL) +
+  theme(panel.grid.major.x = element_blank(), legend.position = c(.7, .8),
+        legend.text = element_text(size = 14, color = "grey40", face = "bold")) +
+  ggsave(here::here("plots", "reworked", "volume_region.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
+```
+There is not a large difference in the number of searches with very high volume. However, the total volume of these searches is a lot higher internationally
+
+
+```{r comparison_volume, fig.width = 10, fig.height = 6}
+dfv %>% drop_na(volume) %>% 
+  mutate(volume_group = case_when(volume < 100 ~ "< 100",
+    between(volume, 100, 1000) ~ "100 - 1000",
+    between(volume, 1000, 10000) ~ "1000 - 10,000",
+    between(volume, 10000, 100000) ~ "10,000 - 100,000",
+    between(volume, 100000, 1000000) ~ "100,000 - 1M",
+    volume > 1000000 ~ "1M +")) %>% 
+  mutate(volume_group = factor(volume_group, levels = c("< 100", "100 - 1000", "1000 - 10,000", "10,000 - 100,000", "100,000 - 1M", "1M +"))) %>% 
+  group_by(volume_group, region) %>% 
+  summarise(n = sum(volume)) %>%
+  ungroup() %>% 
+  mutate(n = n / sum(n)) %>% 
+  ggplot(aes(x = volume_group, y = n, fill = region)) +
+  geom_bar(stat = "identity", position = position_dodge(), width = 0.8, color = "black") +
+  labs(fill = "Region", x = "Volume", y = NULL) +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0)) +
+  scale_fill_manual(values = c("grey70", bl_col), name = NULL) +
+  theme(panel.grid.major.x = element_blank(), legend.position = c(.2, .5),
+        legend.text = element_text(size = 14, color = "grey40", face = "bold")) +
+  ggsave(here::here("plots", "reworked", "volume_region_high.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
+```
+
+
+?? CEDRIC: Percentage correct here? Was decimal numbers before but no clue why.
+
+
+```{r international_v_us_volume, fig.width = 10, fig.height = 8.5}
+df_int <- df %>% mutate(international_volume = global_volume - volume) %>% 
+  filter(international_volume > 0, global_volume > 0) %>% 
+  mutate(volume_diff = log10(international_volume) - log10(volume))
+
+df_int_s <- df_int %>% sample_n(200000)
+
+df_int_s %>% 
+  ggplot(aes(x = volume, y = international_volume)) +
+  geom_jitter(size = 0.1, alpha = 0.05, height = 0.15, width = 0.15, color = colorspace::desaturate(bl_dark, .3)) +
+  geom_abline(intercept = 0, slope = 1, color = bl_col, size = 1) +
+  scale_x_log10(labels = comma, expand = c(0,0)) +
+  scale_y_log10(labels = comma, expand = c(0,0)) +
+  labs(x = "US volume", y = "International volume") +
+  ggsave(here::here("plots", "reworked", "volume_region_corr.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
+
+df_int_s %>% 
+  ggplot(aes(x = volume, y = international_volume)) +
+  geom_hex(color = "white") +
+  geom_abline(intercept = 0, slope = 1, color = bl_col, size = 1) +
+  scale_x_log10(labels = comma, expand = c(.03, .03)) +
+  scale_y_log10(labels = comma, expand = c(.03, .03)) +
+  scale_fill_gradient(low = "grey85", high = bl_dark, 
+                      name = "Number of observations",
+                      breaks = seq(500, 9500, by = 1500)) +
+  guides(fill = guide_colorbar(title.position = "top", 
+                               title.hjust = .5,
+                               direction = "horizontal",
+                               barwidth = unit(16, "lines"),
+                               barheight = unit(.4, "lines"))) +
+  labs(x = "US volume", y = "International volume") +
+  theme(legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        legend.position = c(.75, .1)) +
+  ggsave(here::here("plots", "reworked", "volume_region_corr_hex.pdf"),
+         width = 10, height = 8.5, device = cairo_pdf)
+```
+
+<br>
+
+We can see that they mostly follow each other, but there are some searches with large difference between them.
+
+Higher volume internationally:
+
+```{r}
+tbl <- df_int %>% 
+  arrange(desc(volume_diff)) %>% 
+  filter(volume != 60) %>% 
+  select(keyword, us_volume = volume, international_volume) %>% 
+  head(5)
+
+tbl %>% write_csv("../plots/csv/table_int.csv")
+tbl %>% pander()
+```
+
+<br>
+
+Higher volume in US:
+
+```{r}
+tbl <- df_int %>% 
+  arrange(volume_diff) %>% 
+  select(keyword, us_volume = volume, international_volume) %>% 
+  head(5)
+
+tbl %>% write_csv("../plots/csv/table_us.csv")
+tbl %>% pander()
+```
+
+<br>
+
+
+Searches that have higher volume in US have a higher click-per-search on average than searches that have higher volume internationally.
+
+```{r international_cps}
+df_int_s %>% 
+  filter(cps < 5) %>% 
+  ggplot(aes(x = volume_diff, y = cps)) +
+  geom_point(size = 0.3, alpha = 0.05, color = "grey20") +
+  geom_smooth(method='lm', formula= y~x, color = bl_col, size = 2) +
+  scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
+  labs(x = NULL, y = "Cost per sale (CPS)") +
+  ggsave(here::here("plots", "reworked", "volume_region_cps_corr.pdf"),
+         width = 10, height = 7, device = cairo_pdf)
+```
+<br>
+
+They also have a higher cost-per-click on average
+
+```{r international_cpc, fig.width = 10, fig.height = 7}
+df_int_s %>% 
+  ggplot(aes(x = volume_diff, y = cpc)) +
+  geom_point(size = 0.3, alpha = 0.05, color = "grey20") +
+  geom_smooth(method='lm', formula= y~x, color = bl_col, size = 2) +
+  scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
+  scale_y_log10(labels = comma) +
+  labs(x = NULL, y = "CPC") +
+  ggsave(here::here("plots", "reworked", "volume_region_cpc_corr.pdf"),
+         width = 10, height = 7, device = cairo_pdf)
+```
+<br>
+
+Searches that have higher volume internationally, tend to have higher difficulty
+
+```{r international_difficulty, fig.width = 10, fig.height = 7}
+df_int_s %>% 
+  ggplot(aes(x = volume_diff, y = difficulty)) +
+  geom_point(size = 0.3, alpha = 0.05, color = "grey20") +
+  geom_smooth(method='lm', formula= y~x, color = bl_col, size = 2) +
+  scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
+  labs(x = NULL, y = "Difficulty") +
+  ggsave(here::here("plots", "reworked", "volume_region_difficulty_corr.pdf"),
+         width = 10, height = 7, device = cairo_pdf)
+```
+
+<br>
+
+## Other countries
+
+
+```{r}
+loc <- jsonlite::read_json("../raw_data/locations_stats.json")
+magic_for(print, silent = TRUE)
+for (i in 1:67){
+    country <- loc$tasks[[1]]$result[[i]]$location_name
+    code <- loc$tasks[[1]]$result[[i]]$location_code
+    
+    print(country)
+    print(code)
+}
+countries <- magic_result_as_dataframe() %>% 
+    left_join(
+        gapminder %>% 
+            filter(year == 2007),
+        by = "country")
+```
+
+
+
+
+```{r}
+write_locations_cpc <- function(){
+    magic_for(print, silent = TRUE)
+    for (code in countries$code){
+        sql <- glue("SELECT AVG(keyword_info_cpc) as cpc
+                    FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+                  WHERE location = {code} 
+                  AND keyword_info_search_volume > 0
+                  ")
+        tb <- bq_project_query("dataforseo-bigquery", sql)
+        df <- bq_table_download(tb) 
+        cpc <-  df$cpc
+        print(cpc)
+        }
+    locations_cpc <- magic_result_as_dataframe()
+    write_csv(locations_cpc, "../raw_data/locations_cpc.csv")
+}
+#write_locations_cpc()
+locations_cpc <- read_csv("../raw_data/locations_cpc.csv")
+```
+
+
+```{r}
+write_locations_volume <- function(){
+    magic_for(print, silent = TRUE)
+    for (code in countries$code){
+        sql <- glue("SELECT SUM(keyword_info_search_volume) / 10000 as volume
+                    FROM `dataforseo-bigquery.dataforseo_data.keyword_data`
+                  WHERE location = {code} 
+                  AND keyword_info_search_volume > 0
+                  ")
+        tb <- bq_project_query("dataforseo-bigquery", sql)
+        df <- bq_table_download(tb) 
+        volume <-  df$volume * 10000
+        print(volume)
+        }
+    locations_volume <- magic_result_as_dataframe()
+    write_csv(locations_volume, "../raw_data/locations_volume.csv")
+}
+#write_locations_volume()
+locations_volume <- read_csv("../raw_data/locations_volume.csv")
+```
+
+There is only data for 5 English speaking countries
+
+```{r}
+countries <- inner_join(
+    locations_volume,
+    locations_cpc,
+    by = "code") %>% 
+    left_join(countries, by = "code") %>% 
+    drop_na(volume)
+countries$country
+```
+```{r}
+countries %>% mutate(volume_prop = countries %>% filter(country == "United States") %>% pull(volume) / volume)
+```
+
+
+```{r search_volume_vs_us}
+countries %>% mutate(volume_prop = volume / countries %>% filter(country == "United States") %>% pull(volume)) %>% 
+    filter(country != "United States") %>% 
+     ggplot(aes(x = reorder(country, volume_prop), y = volume_prop)) +
+    geom_bar(stat = "identity", fill = bl_dark, width = 0.85, color = "black") +
+    scale_y_continuous(labels = scales::percent, expand = c(.003, .003)) +
+    theme(panel.grid.major.x = element_blank()) +
+    labs(y = "", x = NULL, title = "Total search volume as proportion of US volume") +
+    geom_text(aes(label = glue::glue("{format(round(volume_prop, 3) * 100, scientific = FALSE)}%")), nudge_y = .008, family = "Montserrat", fontface = "bold", color = "grey40")
+```
+
+
+```{r, countries_volume}
+countries %>% 
+    mutate(volume_per_pop = volume / pop) %>% 
+    mutate(country = case_when(
+        country == "United Kingdom" ~ "UK",
+        country == "United States" ~ "US",
+        T ~ country
+    )) %>% 
+    ggplot(aes(x = reorder(country, volume_per_pop), y = volume_per_pop)) +
+    geom_bar(stat = "identity", fill = bl_dark, width = 0.85, color = "black") +
+    scale_y_continuous( expand = c(.001, .001)) +
+    theme(panel.grid.major.x = element_blank()) +
+    labs(y = "Search volume per person", x = NULL, title = "Search volume per person compared to US")
+```
+
+
+
+```{r, countries_cpc}
+countries %>% 
+    mutate(country = case_when(
+        country == "United Kingdom" ~ "UK",
+        country == "United States" ~ "US",
+        T ~ country
+    )) %>% 
+    ggplot(aes(x = reorder(country, cpc), y = cpc)) +
+    geom_bar(stat = "identity", fill = bl_dark, width = 0.85, color = "black") +
+    scale_y_continuous( expand = c(.001, .001)) +
+    theme(panel.grid.minor.x = element_blank(), 
+          panel.grid.major.y = element_blank(), 
+          axis.line.y = element_blank()) +
+    labs(y = "Mean CPC", x = NULL, title = "Mean CPC by country")
+```
