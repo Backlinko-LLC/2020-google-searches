@@ -336,12 +336,21 @@ dff %>%
   stat_density_ridges(fill = colorspace::desaturate(bl_col, .2), color = bl_dark, alpha = .7, size = 1) +
   scale_x_continuous(expand = c(0, 0)) +
   coord_cartesian(clip = "off") +
-  labs(x = "Cost per search (CPS)", y = "SERP feature", title = "SERP features and cost per search") +
+  labs(x = "Clicks per search", y = "SERP feature", title = "SERP features and clicks per search") +
   theme(panel.grid.major.y = element_blank(),
         panel.grid.minor.x = element_blank())# +
   #ggsave(here::here("plots", "reworked", "serp_cps.pdf"),
   #       width = 10, height = 7.5, device = cairo_pdf)
 ```
+
+```{r}
+dff %>% group_by(serp_features) %>% 
+    summarise(m = mean(cpc, na.rm = T)) %>% 
+    arrange(m)
+```
+
+
+
 
 ```{r serp_volume_ridge}
 order <- dff %>% 

@@ -134,6 +134,7 @@ title_description_table <- read.csv(here::here("plots", "csv", "top_volume.csv")
 knitr::kable(title_description_table, caption = "High volume among top searches")
 ```
 
+
 If we divide the searches into categories based on how much volume they receive, this gives an overview:
 
 
@@ -307,7 +308,7 @@ knitr::include_graphics(here::here("plots", "0911", "serp_presence.png"))
 The knowledge card has a huge effect in reducing the clicks-per-search, while the other SERP features have limited effect. Searches with the Shopping results SERP feature have higher cps on average.
 
 ```{r serp_cps, echo=FALSE}
-knitr::include_graphics(here::here("plots", "0911", "serp_cps.png"))
+knitr::include_graphics(here::here("plots", "1611", "serp_cps-1.png"))
 ```
 
 
