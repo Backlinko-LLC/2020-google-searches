@@ -639,14 +639,17 @@ pairs %>%
   mutate(pair = glue("{v1} & {v2}")) %>% 
   ggplot(aes(y = reorder(pair, n), x = n)) +
   geom_bar(stat = "identity", fill = bl_dark, width = 0.65) +
-  labs(x = NULL, y = "SERP feature pair", title = "Most common SERP feature pairings") +
+  geom_text(aes(label = glue::glue("{format(round(n, 3) * 100, scientific = FALSE)}%")),
+            nudge_x = .002, family = "Montserrat", fontface = "bold", 
+            color = "grey40", size = 2.7, hjust = 0) +
+  labs(x = NULL, y = "SERP feature pair", title = "Most Common SERP Feature Pairings") +
   scale_x_continuous(labels = scales::label_percent(accuracy = .1), 
-                     breaks = seq(0, .15, by = .025), expand = c(0, 0), limits = c(0, .15)) +
+                     breaks = seq(0, .15, by = .025), expand = c(0, 0), limits = c(0, .16)) +
   theme(panel.grid.minor.x = element_blank(), 
         panel.grid.major.y = element_blank(), 
         axis.line.y = element_blank()) +
   ggsave(here::here("plots", "reworked", "serp_pairings.pdf"),
-         width = 10, height = 5, device = cairo_pdf)
+         width = 10, height = 5.5, device = cairo_pdf)
 ```
 
 

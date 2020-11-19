@@ -445,7 +445,7 @@ pairs %>%
   geom_text(aes(label = glue::glue("{format(round(n, 3) * 100, scientific = FALSE)}%")),
             nudge_x = .002, family = "Montserrat", fontface = "bold", 
             color = "grey40", size = 2.7, hjust = 0) +
-  labs(x = NULL, y = "SERP feature pair", title = "Search Results With SERP Features Are More\nCompetitive vs Those Without SERP Features") +
+  labs(x = NULL, y = "SERP feature pair", title = "Most Common SERP Feature Pairings") +
   scale_x_continuous(labels = scales::label_percent(accuracy = .1), 
                      breaks = seq(0, .15, by = .025), expand = c(0, 0), limits = c(0, .16)) +
   theme(panel.grid.minor.x = element_blank(), 
@@ -456,7 +456,7 @@ pairs %>%
 ```
 
 
-Definition SERP feautres: A SERP feature is any result on a Google Search Engine Results Page (SERP) that is not a traditional organic result. The most common SERP Features are: Rich Snippets which add a visual layer to an existing result (e.g., review stars for product ratings).
+Definition SERP features: A SERP feature is any result on a Google Search Engine Results Page (SERP) that is not a traditional organic result. The most common SERP Features are: Rich Snippets which add a visual layer to an existing result (e.g., review stars for product ratings).
 
 !!!D: after the 3rd, may make sense to check if there is anything interesting on relationship between keyword category and SERP features. 
 
