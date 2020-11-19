@@ -221,7 +221,7 @@ df %>%
       geom_text(aes(label = glue::glue("{format(round(search_volume, 0), scientific = FALSE)}")),
             nudge_y = 10, family = "Montserrat", fontface = "bold", 
             color = "grey40", size = 2.7, hjust = 0) +
-  ggsave(here::here("plots", "reworked", "volume_category_ordered.pdf"),
+  ggsave(here::here("plots", "reworked", "volume_mean_category_ordered.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
 ```
 

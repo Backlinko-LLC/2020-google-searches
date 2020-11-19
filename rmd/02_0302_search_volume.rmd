@@ -241,7 +241,7 @@ n_orig_prop %>%
   geom_text(aes(label = glue::glue("{format(round(n_prop, 3) * 100, scientific = FALSE)}%")),
             nudge_y = .04, family = "Montserrat", fontface = "bold", color = "grey40") +
   theme(panel.grid.major.x = element_blank()) +
-  labs(x = "Search volume category", y = "Percentage of all searches", title = "Number of searches") +
+  labs(x = "Search Volume Category", y = "Percentage of All Searches", title = "91.8% of Search Terms Are Long Tail Keywords") +
   scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0.001, 0.001))+
   ggsave(here::here("plots", "reworked", "proportion_searches.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
@@ -292,7 +292,7 @@ volume_top %>%
     limits = c(0, 200* 10^6), 
     expand = c(.001, .001)
     ) +
-  labs(x = "Rank (top Keywords)", title = "Volume of top searches", fill = "") + 
+  labs(x = "Rank (Top Keywords)", y = "Volume", title = "High Volume of Top Searches", fill = "") + 
   annotate("text", x = 9000, y = 65*10^6, label = "Remaining\n99.9967%", family = "Montserrat") + 
   geom_segment(aes(x = 7900, y = 42*10^6, xend = 10000, yend = 42*10^6),
                arrow = arrow(length = unit(0.35, "cm"), type = "closed")) +

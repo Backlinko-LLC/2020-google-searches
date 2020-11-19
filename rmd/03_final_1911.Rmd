@@ -238,7 +238,7 @@ Search terms that are 1-3 words in length get ~10x as much volume on average as 
 Internet & Telecom is the keyword category with the highest mean volume.
 
 ```{r volume_mean_category_ordered, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_category_ordered.png"))
+knitr::include_graphics(here::here("plots", "reworked", "volume_mean_category_ordered.png"))
 ```
 
 ([data table](https://github.com/danielkupka/2020-google-searches/blob/master/proc_data/categories_averages.csv))
