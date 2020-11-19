@@ -197,20 +197,20 @@ write_categories <- function()
   }
   df <- map_df(toplevel$id, get_category_volume)  
   
-  df %>% mutate(search_volume = search_volume * 10000,
+  df %>% mutate(search_volume = search_volume,
                 mean_volume = search_volume / count
                 ) %>% 
     left_join(toplevel %>% select(id, cat1), by = "id") %>% 
     write_csv("../proc_data/categories_averages.csv")
 }
-write_categories()
+#write_categories()
 df <- read_csv("../proc_data/categories_averages.csv")
 ```
 
 
 ```{r search_category_volume_mean, fig.height = 10, fig.width = 7.5}
 df %>% 
-  ggplot(aes(x = fct_reorder(cat1, mean_volume), y = mean_volume)) +
+  ggplot(aes(x = fct_reorder(cat1, search_volume), y = search_volume)) +
   geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
   coord_flip() + 
   theme_flip +
@@ -287,7 +287,7 @@ write_categories <- function()
   df %>% left_join(toplevel %>% select(id, cat1), by = "id") %>% 
     write_csv("../proc_data/categories_cpc.csv")
 }
-write_categories()
+#write_categories()
 df <- read_csv("../proc_data/categories_cpc.csv")
 ```
 
