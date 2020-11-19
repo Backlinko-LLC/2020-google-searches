@@ -390,7 +390,7 @@ There is search data from 5 English-speaking countries.
 Of those, US and UK have the highest search volume per person. Americans use google 38% more than UK, 108% more than Canada and 90% more than Australia, when adjusted for population.
 
 ```{r countries_volume, echo=FALSE}
-knitr::include_graphics(here::here("plots", "1611", "countries_volume-1.png"))
+knitr::include_graphics(here::here("plots", "reworked", "volume_population.png"))
 ```
 US of course has much higher total search volume overall:
 
@@ -403,7 +403,7 @@ US has significantly higher cost per click on average
 
 
 ```{r countries_cpc, echo=FALSE}
-knitr::include_graphics(here::here("plots", "0911", "countries_cpc.png"))
+knitr::include_graphics(here::here("plots", "reworked", "cpc_countries.png"))
 ```
 
 The following is based on analysis with *ahref*.
