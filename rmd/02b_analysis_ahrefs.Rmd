@@ -335,7 +335,8 @@ dfs %>%
   scale_x_log10(labels = comma, breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000)) +
   geom_smooth(method='lm', formula= y~x, color = bl_col) +
   theme(panel.grid.minor.x = element_blank()) +
-  labs(title = "Keyword difficulty and volume", x = "Search volume", y = "Difficulty") +
+  labs(title = "Popular Keywords Have Higher Keyword Difficulty Scores", 
+       x = "Monthly search volume", y = "Difficulty") +
   ggsave(here::here("plots", "reworked", "volume_difficulty.pdf"),
          width = 10, height = 7, device = cairo_pdf)
 ```
@@ -391,6 +392,16 @@ dfs %>% drop_na(difficulty_cat) %>%
   theme(panel.grid.major.x = element_blank()) +
   labs(x = "Difficulty category", y = "Cost per click", title = "Keyword difficulty and cpc") +
   ggsave(here::here("plots", "reworked", "cpc_difficulty_true.pdf"),
+         width = 10, height = 7, device = cairo_pdf)
+
+dfs %>% drop_na(difficulty_cat) %>% 
+  ggplot(aes(y = cpc, x = difficulty_cat)) +
+  geom_boxplot(color = bl_dark, fill = "grey75", 
+               size = 1.1, width = .7) +
+  scale_y_log10(labels = c("0.01", "0.1", "1", "10", "100"), breaks = c(0.01, 0.1, 1, 10, 100)) +
+  theme(panel.grid.major.x = element_blank()) +
+  labs(x = "Difficulty category", y = "Cost per click", title = "Keywords With High Keyword Difficulty Scores Have Higher CPCs") +
+  ggsave(here::here("plots", "reworked", "cpc_difficulty_boxplot.pdf"),
          width = 10, height = 7, device = cairo_pdf)
 ```
 

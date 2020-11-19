@@ -258,10 +258,12 @@ kw_words %>%
     ggplot(aes(x = length, y = prop)) +
     geom_line(color = colorspace::desaturate(bl_col, .35), size = 1) + 
     geom_point(color = bl_dark, size = 2.5) +
-    scale_x_continuous(expand = c(.008, .008), breaks = seq(0, 10, by = 1)) +
+    scale_x_continuous(expand = c(.012, .012), breaks = seq(0, 10, by = 1)) +
     scale_y_continuous(labels = scales::label_percent(accuracy = 1), breaks = seq(0, .6, by = .1)) +
-    labs(x = "Search term length (in words)", y = "Proportion of total search volume", title = "Search volume by number of words in search term") +
-    theme(panel.grid.minor.x = element_blank())
+    labs(x = "Search term length (in words)", y = "Proportion of total search volume", title = "1–2 Word Terms Have The Highest Average Search Volume") +
+    theme(panel.grid.minor.x = element_blank()) +
+  ggsave(here::here("plots", "reworked", "volume_words_searchterm.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
 ```
 
 ```{r, render = pander}
