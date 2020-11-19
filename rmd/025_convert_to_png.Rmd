@@ -1,0 +1,30 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r prep}
+set.seed(2)
+
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "ggridges", "spatstat", "broom")
+for(i in required_packages) { 
+  if(!require(i, character.only = T)) {
+    #  if package is not existing, install then load the package
+    install.packages(i, dependencies = T)
+  require(i, character.only = T)
+  }
+}
+```
+
+
+```{r convert_to_pngs, results='asis', echo=FALSE, eval=FALSE, include=FALSE}
+dir_plots <- here::here("plots", "reworked")
+
+dpi <- 750
+pdfs <- list.files(dir_plots, pattern = ".*pdf", recursive = TRUE)
+for(pdf in pdfs) {
+  pdftools::pdf_convert(pdf = glue::glue("{dir_plots}/{pdf}"), 
+              filenames = glue::glue("{dir_plots}/{str_remove(pdf, '.pdf')}.png"),
+              format = "png", dpi = dpi)
+}
+```
