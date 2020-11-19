@@ -216,7 +216,9 @@ df %>%
   theme_flip +
   theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
   scale_y_continuous(limits = c(0, 3500), expand = c(0,0), breaks = seq(0, 3000, by = 1000)) +
-  labs(x = NULL, y = NULL, title = "Search volume mean by category")
+  labs(x = NULL, y = NULL, title = "Search volume mean by category")+
+  ggsave(here::here("plots", "reworked", "volume_category_ordered.pdf"),
+         width = 10, height = 7.5, device = cairo_pdf)
 ```
 
 !!!D: I would be curious to see the same graph with median. Wouldn´t it be better to use median given the skewed data set? 
@@ -246,7 +248,7 @@ write_categories_volume <- function()
   df %>% left_join(toplevel %>% select(id, cat1), by = "id") %>% 
     write_csv("../proc_data/categories_total_volume.csv")
 }
-#write_categories_volume()
+write_categories_volume()
 df <- read_csv("../proc_data/categories_total_volume.csv")
 ```
 
@@ -257,11 +259,14 @@ df %>%
   mutate(volume = volume / sum(volume)) %>% 
   ggplot(aes(x = fct_reorder(cat1, volume), y = volume)) +
   geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  geom_text(aes(label = glue::glue("{format(round(volume, 3) * 100, scientific = FALSE)}%")),
+            nudge_y = .002, family = "Montserrat", fontface = "bold", 
+            color = "grey40", size = 2.7, hjust = 0) +
   coord_flip() + 
   theme_flip +
   theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
-  scale_y_continuous(limits = c(0, .2), expand = c(0,0), labels = scales::percent) +
-  labs(x = NULL, y = NULL, title = "Total search volume by category") +
+  scale_y_continuous(limits = c(0, .21), expand = c(0,0), labels = scales::percent) +
+  labs(x = NULL, y = NULL, title = "Industries With the Greatest Total Search\nVolume Include “News, Media & Publications”,\n“Internet & Telecom”, and “Arts & Entertainment”") +
   ggsave(here::here("plots", "reworked", "volume_total_category_ordered.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
 ```
@@ -293,17 +298,20 @@ df <- read_csv("../proc_data/categories_cpc.csv")
 
 <br>
 
-```{r search_category_cpc_mean, fig.height = 10, fig.width = 6.5}
+```{r search_category_cpc_mean, fig.height = 10, fig.width = 7}
 df %>% 
   ggplot(aes(x = fct_reorder(cat1, mean_cpc), y = mean_cpc)) +
   geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  geom_text(aes(label = format(round(mean_cpc, 2), scientific = FALSE)),
+            nudge_y = -.02, family = "Montserrat", hjust = 1,
+            size = 2.5, color = "white", fontface = "bold") +
   coord_flip() + 
   theme_flip +
   theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
-  scale_y_continuous(limits = c(0, 2), expand = c(0,0)) +
-  labs(x = NULL, y = NULL, title = "Mean CPC by category") +
+  scale_y_continuous(expand = c(0,0), breaks = seq(0, 2, by = .25)) +
+  labs(x = NULL, y = NULL, title = "Finance, Real Estate, and Health Industries Have the Highest CPCs") +
   ggsave(here::here("plots", "reworked", "cpc_mean_category_ordered.pdf"),
-         width = 10, height = 6.5, device = cairo_pdf)
+         width = 10, height = 7, device = cairo_pdf)
 ```
 
 <br>

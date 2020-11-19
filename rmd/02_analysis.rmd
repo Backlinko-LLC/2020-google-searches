@@ -654,7 +654,7 @@ df %>% mutate(prop = volume / sum(volume)) %>%
   geom_point(color = bl_dark, size = 2.5) +
   scale_x_continuous(expand = c(.008, .008)) +
   scale_y_continuous(labels = scales::label_percent(accuracy = 1), breaks = seq(0, .14, by = .02)) +
-  labs(x = "Keyword length", y = "Total search volume", title = "Search volume by keyword length") +
+  labs(x = "Keyword length", y = "Total search volume", title = "Keywords Between 5-10 Characters Get Searched For the Most") +
   theme(panel.grid.minor.x = element_blank()) +
   ggsave(here::here("plots", "reworked", "volume_keywordlength.pdf"),
          width = 10, height = 6, device = cairo_pdf)
@@ -776,11 +776,14 @@ df %>%
   mutate(volume = volume / sum(volume)) %>% 
   ggplot(aes(x = fct_reorder(cat1, volume), y = volume)) +
   geom_bar(stat = "identity", fill = bl_dark, width = 0.7) +
+  geom_text(aes(label = glue::glue("{format(round(volume, 3) * 100, scientific = FALSE)}%")),
+            nudge_y = .006, family = "Montserrat", fontface = "bold", 
+            color = "grey40", size = 2.7) +
   coord_flip() + 
   theme_flip +
   theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
-  scale_y_continuous(limits = c(0, .2), expand = c(0,0)) +
-  labs(x = NULL, y = NULL, title = "Total search volume by category") +
+  scale_y_continuous(limits = c(0, .21), expand = c(0,0)) +
+  labs(x = NULL, y = NULL, title = "Industries With the Greatest Total Search Volume Include “News,\nMedia & Publications”, “Internet & Telecom”, and “Arts & Entertainment”") +
   ggsave(here::here("plots", "reworked", "volume_total_category_ordered.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
 ```
@@ -985,9 +988,13 @@ countries %>%
     )) %>% 
     ggplot(aes(x = reorder(country, volume_per_pop), y = volume_per_pop)) +
     geom_bar(stat = "identity", fill = bl_dark, width = 0.85, color = "black") +
-    scale_y_continuous( expand = c(.001, .001)) +
+    geom_text(aes(label = format(round(volume_per_pop, 1), scientific = FALSE)),
+            nudge_y = 30, family = "Montserrat", fontface = "bold", color = "grey40") +
+  scale_y_continuous( expand = c(.001, .01), limits = c(0, 1100)) +
     theme(panel.grid.major.x = element_blank()) +
-    labs(y = "Search volume per person", x = NULL, title = "Total search volume compared to population size")
+    labs(y = "Search volume per person", x = NULL, title = "Americans Search in Google More Than\nAny Other English-Speaking Countries") +
+  ggsave(here::here("plots", "reworked", "volume_population.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
 ```
 
 

@@ -268,7 +268,7 @@ df_int_s %>%
   geom_abline(intercept = 0, slope = 1, color = bl_col, size = 1) +
   scale_x_log10(labels = comma, expand = c(0,0)) +
   scale_y_log10(labels = comma, expand = c(0,0)) +
-  labs(x = "US volume", y = "International volume") +
+  labs(x = "US volume", y = "International volume", title = "Popular Searches in the US Tend to Be Popular Internationally") +
   ggsave(here::here("plots", "reworked", "volume_region_corr.pdf"),
          width = 10, height = 6, device = cairo_pdf)
 
@@ -497,6 +497,9 @@ countries %>%     mutate(volume_per_pop = volume_per_pop / countries %>% filter(
     filter(country != "United States") %>% 
     ggplot(aes(x = reorder(country, volume_per_pop), y = volume_per_pop)) +
     geom_bar(stat = "identity", fill = bl_dark, width = 0.85, color = "black") +
+    geom_text(aes(label = format(round(mean_cpc, 2), scientific = FALSE)),
+              nudge_y = -.02, family = "Montserrat", hjust = 1,
+              size = 2.5, color = "white", fontface = "bold") +
     scale_y_continuous(labels = scales::percent, expand = c(.01, .01)) +
     theme(panel.grid.major.x = element_blank()) +
     labs(y = "Search volume per person", x = NULL, title = "Search volume per person compared to US") +
@@ -514,9 +517,14 @@ countries %>%
     )) %>% 
     ggplot(aes(x = reorder(country, cpc), y = cpc)) +
     geom_bar(stat = "identity", fill = bl_dark, width = 0.85, color = "black") +
-    scale_y_continuous( expand = c(.001, .001)) +
+    geom_text(aes(label = format(round(cpc, 2), scientific = FALSE)),
+            nudge_y = .025, family = "Montserrat", 
+            fontface = "bold", color = "grey40") +
+    scale_y_continuous( expand = c(.001, .001), limits = c(0, .64),
+                        breaks = 0:6 / 10) +
     theme(panel.grid.minor.x = element_blank(), 
-          panel.grid.major.y = element_blank(), 
-          axis.line.y = element_blank()) +
-    labs(y = "Mean CPC", x = NULL, title = "Mean CPC by country")
+          panel.grid.major.x = element_blank()) +
+    labs(y = "Mean CPC", x = NULL, title = "The US Has Higher CPCs Compared to Other English-Speaking Countries") +
+  ggsave(here::here("plots", "reworked", "cpc_countries.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
 ```
