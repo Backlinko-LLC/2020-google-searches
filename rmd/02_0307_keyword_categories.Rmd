@@ -217,7 +217,10 @@ df %>%
   theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
   scale_y_continuous(limits = c(0, 3500), expand = c(0,0), breaks = seq(0, 3000, by = 1000)) +
   labs(x = NULL, y = NULL, 
-       title = "Industries With The Highest Mean Search Volume\nKeywords Include “Internet & Telecom”, “News,\nMedia & Publications”, and “Consumer Electronics”")+
+       title = "Industries With The Highest Mean Search Volume\nKeywords Include “Internet & Telecom”, “News,\nMedia & Publications”, and “Consumer Electronics”") +
+      geom_text(aes(label = glue::glue("{format(round(search_volume, 0), scientific = FALSE)}")),
+            nudge_y = 10, family = "Montserrat", fontface = "bold", 
+            color = "grey40", size = 2.7, hjust = 0) +
   ggsave(here::here("plots", "reworked", "volume_category_ordered.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
 ```
@@ -314,6 +317,4 @@ df %>%
   ggsave(here::here("plots", "reworked", "cpc_mean_category_ordered.pdf"),
          width = 10, height = 7, device = cairo_pdf)
 ```
-
-<br>
 
