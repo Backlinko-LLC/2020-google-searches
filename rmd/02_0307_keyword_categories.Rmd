@@ -216,7 +216,8 @@ df %>%
   theme_flip +
   theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
   scale_y_continuous(limits = c(0, 3500), expand = c(0,0), breaks = seq(0, 3000, by = 1000)) +
-  labs(x = NULL, y = NULL, title = "Search volume mean by category")+
+  labs(x = NULL, y = NULL, 
+       title = "Industries With The Highest Mean Search Volume\nKeywords Include “Internet & Telecom”, “News,\nMedia & Publications”, and “Consumer Electronics”")+
   ggsave(here::here("plots", "reworked", "volume_category_ordered.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
 ```
@@ -248,7 +249,7 @@ write_categories_volume <- function()
   df %>% left_join(toplevel %>% select(id, cat1), by = "id") %>% 
     write_csv("../proc_data/categories_total_volume.csv")
 }
-write_categories_volume()
+#write_categories_volume()
 df <- read_csv("../proc_data/categories_total_volume.csv")
 ```
 
