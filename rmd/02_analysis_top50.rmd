@@ -528,7 +528,7 @@ n_orig_prop %>%
   geom_text(aes(label = glue::glue("{format(round(n_prop, 3) * 100, scientific = FALSE)}%")),
             nudge_y = .04, family = "Montserrat", fontface = "bold", color = "grey40", size = 3) +
   theme(panel.grid.major.x = element_blank()) +
-  labs(x = "Search volume category", y = "Percentage of all searches", title = "Number of searches") +
+  labs(x = "Search Volume Category", y = "Percentage of All Searches", title = "91.8% of Search Terms Are Long Tail Keywords") +
   scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0.001, 0.001))
 ```
 

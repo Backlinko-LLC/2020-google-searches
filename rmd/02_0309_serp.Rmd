@@ -393,27 +393,54 @@ rdffn %>% mutate(n_serp = as.numeric(n_serp)) %>%
   drop_na(difficulty_cat) %>% 
   ggplot(aes(x = difficulty_cat, y = n_serp)) +
   geom_boxplot(color = bl_dark, fill = "grey92", size = .7, width = .7) +
-  labs(x = "Difficulty", y = "SERP features", title = "Difficulty and number of SERP features")# +
-  #ggsave(here::here("plots", "reworked", "serp_difficulty_box.pdf"),
-  #       width = 10, height = 6.5, device = cairo_pdf)
+  labs(x = "Difficulty", y = "SERP features", title = "Search Results With SERP Features Are More\nCompetitive vs Those Without SERP Features") +
+  ggsave(here::here("plots", "reworked", "serp_difficulty_box.pdf"),
+         width = 10, height = 6.5, device = cairo_pdf)
 ```
 
 
 ```{r serp_difficulty_n, fig.width = 10, fig.height = 6.5}
-rdffn %>% group_by(n_serp) %>%
+rdffn %>% mutate(has_serp = ifelse(n_serp == "0", "No", "Yes")) %>% 
+    group_by(has_serp) %>%
   summarise(difficulty = mean(difficulty, na.rm = T)) %>% 
-  ggplot(aes(x = n_serp, y = difficulty)) +
+  ggplot(aes(x = has_serp, y = difficulty)) +
   geom_bar(stat = "identity", fill = bl_dark, color = "black", width = 0.8) +
   geom_text(aes(label = format(round(difficulty, 1), scientific = FALSE)),
             nudge_y = .7, family = "Montserrat", fontface = "bold", 
             color = "grey40") +
-  labs(x = "Number of SERP features", title = "Google Search Results With More SERP\nFeatures Have Higher Mean Keyword Difficulty", y = "Difficulty") +
+  labs(x = "Has SERP feature", title = "Google Search Results With SERP Features\nHave Higher Mean Keyword Difficulty", y = "Difficulty") +
   coord_cartesian(clip = "off") +
   scale_y_continuous(expand = c(.001, .001), limits = c(0, 21)) +
   theme(panel.grid.major.x = element_blank()) +
-  ggsave(here::here("plots", "reworked", "serp_mean_difficulty.pdf"),
+  ggsave(here::here("plots", "reworked", "has_serp_difficulty.pdf"),
          width = 10, height = 6.5, device = cairo_pdf)
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r serp_pairs, fiog.width = 10, fig.height = 5}
 find_pairs <-  function(){

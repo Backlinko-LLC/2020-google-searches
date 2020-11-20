@@ -227,7 +227,7 @@ n_orig_prop %>%
   geom_text(aes(label = glue::glue("{format(round(volume_prop, 3) * 100, scientific = FALSE)}%")),
             nudge_y = .04, family = "Montserrat", fontface = "bold", color = "grey40") +
   theme(panel.grid.major.x = element_blank()) +
-  labs(x = "Search volume category", y = "Percentage of all search volume", title = "Volume of searches") +
+  labs(x = "Search Volume Category", y = "Percentage of All Search Volume", title = "Long Tails Account For Only 3.3% of Total Search Volume") +
   scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0.001, 0.001))+
   ggsave(here::here("plots", "reworked", "proportion_search_volume.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
@@ -313,7 +313,7 @@ top100 %>% add_rownames() %>%
     mutate(rowname = as.numeric(rowname)) %>% 
     ggplot(aes(x = rowname, y = volume)) +
     geom_area(alpha = 0.8, fill = bl_dark) +
-    labs(x = "Rank (top Keywords)", title = "Volume of top 100 searches", y = "Volume") +
+    labs(x = "Rank (Top Keywords)", title = "Volume of Top 100 Searches", y = "Volume") +
     scale_y_continuous(labels = c("0%", "0.1%", "0.2%", "0.3%", "0.4%", "0.5%", "0.6%"), limits = c(0, 0.006), expand = c(0,0)) +
     scale_x_continuous(limits = c(1, 100), expand = c(0,0)) +
     ggsave(here::here("plots", "reworked", "volume_by_searches_ahref.pdf"),
