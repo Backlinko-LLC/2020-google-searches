@@ -16,7 +16,7 @@ editor_options:
   chunk_output_type: inline
 ---
 
-
+```{=html}
 <style>
 .list-group-item.active, .list-group-item.active:hover, .list-group-item.active:focus {
   background-color: #00d188;
@@ -53,8 +53,7 @@ h3 {
   margin-right: auto;
 }
 </style>
-
-
+```
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.showtext = TRUE, out.width = "100%", out.height = "100%")
 knitr::knit_hooks$set(inline = function(x) {
@@ -74,18 +73,17 @@ library(gt)
 
 <br>
 
-# 1 Introduction 
+# 1 Introduction
 
-Keyword data informs and impacts every other SEO task, including finding content topics, on-page SEO, email outreach, and content promotion. While a wealth of companies provide granular keyword data, a birds-eye view of Google Searches is missing in the industry.  This large-scale analysis aims to fill the gap. 
+Keyword data informs and impacts every other SEO task, including finding content topics, on-page SEO, email outreach, and content promotion. While a wealth of companies provide granular keyword data, a birds-eye view of Google Searches is missing in the industry. This large-scale analysis aims to fill the gap.
 
 # 2 Methodology
 
-As a data partner, DataForSEO provided the raw data for the analysis through their keyword database [https://dataforseo.com/databases]. The analysis was limited to US keyword data that accounted for around 306 keyword searches. Keyword monthly searchers with volume of 0 were removed from the data set. The data was queried from a Google BigQuery database. 
+As a data partner, DataForSEO provided the raw data for the analysis through their keyword database [<https://dataforseo.com/databases>]. The analysis was limited to US keyword data that accounted for around 306 keyword searches. Keyword monthly searchers with volume of 0 were removed from the data set. The data was queried from a Google BigQuery database.
 
-To attain additional insights from the data, we enriched a random sample of around 2.5 million keywords with the Ahrefs Keyword Explorer. This includes the data on difficulty, return rate, clicks, region volume, and SERP features. 
+To attain additional insights from the data, we enriched a random sample of around 2.5 million keywords with the Ahrefs Keyword Explorer. This includes the data on difficulty, return rate, clicks, region volume, and SERP features.
 
 Below an overview of the data:
-
 
 ```{r overview}
 tbl <- tribble(~Statistic, ~Value,
@@ -103,7 +101,7 @@ knitr::kable(tbl, caption = "Overview")
 
 <br>
 
-# 3 Research Findings 
+# 3 Research Findings
 
 <br>
 
@@ -118,14 +116,11 @@ title_description_table <- read.csv(here::here("plots", "csv", "top50_table.csv"
 knitr::kable(title_description_table, caption = "Searches with highest volume")
 ```
 
-
-<br>
-<br>
+<br> <br>
 
 ## 3.2 Search volume
 
 The search volume is concentrated among the top searches:
-
 
 ```{r high_volume}
 title_description_table <- read.csv(here::here("plots", "csv", "top_volume.csv")) %>%
@@ -134,14 +129,11 @@ title_description_table <- read.csv(here::here("plots", "csv", "top_volume.csv")
 knitr::kable(title_description_table, caption = "High volume among top searches")
 ```
 
-
 If we divide the searches into categories based on how much volume they receive, this gives an overview:
-
 
 ```{r number_searches, echo=FALSE}
 knitr::include_graphics(here::here("plots", "reworked_font", "proportion_searches.png"))
 ```
-
 
 ```{r volume_searches, echo=FALSE}
 knitr::include_graphics(here::here("plots", "reworked_font", "proportion_search_volume.png"))
@@ -149,13 +141,11 @@ knitr::include_graphics(here::here("plots", "reworked_font", "proportion_search_
 
 These figures together show that low volume searches (individual searches with volume less than 100), constitute 91.8% of all searches, but only 3.3% of all volume. Or stated in another way, 91.8% of keywords get 1-100 volume a month. Whereas very high volume searches (individual searches with volume above 10,000) constitute only 0.2% of all searches, but have 75.2% of all volume.
 
-
 The top searches have high volume compared to the rest, and the search volume level quickly levels off. The picture looks slightly different depending on whether we use the values from *DataforSEO*:
 
 ```{r}
 knitr::include_graphics(here::here("plots", "reworked_font", "volume_by_searches_dataforseo.png"))
 ```
-
 
 Or *ahref*:
 
@@ -163,21 +153,17 @@ Or *ahref*:
 knitr::include_graphics(here::here("plots", "reworked_font", "volume_by_searches_ahref.png"))
 ```
 
-
-<br>
-<br>
-
+<br> <br>
 
 ## 3.3 Spell types
 
-If a misspelling is recognized, a so-called spell type is suggested. There are three types of spell shown in the table below. ~1.4% of searches have a spell type, but those that do have tend to have high volume. 
+If a misspelling is recognized, a so-called spell type is suggested. There are three types of spell shown in the table below. \~1.4% of searches have a spell type, but those that do have tend to have high volume.
 
 ```{r spell_types_count, echo=FALSE}
 knitr::include_graphics(here::here("plots", "0911", "spell_types.png"))
 ```
 
-<br>
-<br>
+<br> <br>
 
 ## 3.4 Questions in searches
 
@@ -187,12 +173,11 @@ knitr::include_graphics(here::here("plots", "0911", "spell_types.png"))
 knitr::include_graphics(here::here("plots", "reworked_font", "questions_count.png"))
 ```
 
-<br>
-<br>
+<br> <br>
 
 ## 3.5 Stopwords
 
-A list of stopwords was qcquired from here: https://meta.wikimedia.org/wiki/Stop_word_list/google_stop_word_list#English
+A list of stopwords was qcquired from here: <https://meta.wikimedia.org/wiki/Stop_word_list/google_stop_word_list#English>
 
 "how" and "the" are the most common stopwords, which are present in 6-8% of searches.
 
@@ -206,9 +191,7 @@ knitr::include_graphics(here::here("plots", "0911", "stopwords_cloud_dark.png"))
 knitr::include_graphics(here::here("plots", "0911", "stopwords_cloud_colors.png"))
 ```
 
-
-<br>
-<br>
+<br> <br>
 
 ## 3.6. Length of search term
 
@@ -218,9 +201,7 @@ The most searched queries have length 5-10 characters, and falls continuously fo
 knitr::include_graphics(here::here("plots", "reworked_font", "volume_keywordlength.png"))
 ```
 
-
 The mean keyword length in characters is 11.2, and the median is 8.5.
-
 
 ```{r keyword_words_volume, echo=FALSE}
 knitr::include_graphics(here::here("plots", "reworked_font", "volume_words_searchterm.png"))
@@ -228,10 +209,9 @@ knitr::include_graphics(here::here("plots", "reworked_font", "volume_words_searc
 
 Most searches consist of a single word, with volume quickly falling as the number of words increase.
 
-Search terms that are 1-3 words in length get ~10x as much volume on average as search terms that are 5+ words in length.
+Search terms that are 1-3 words in length get \~10x as much volume on average as search terms that are 5+ words in length.
 
-<br>
-<br>
+<br> <br>
 
 ## 3.7 Keyword info categories
 
@@ -243,7 +223,6 @@ knitr::include_graphics(here::here("plots", "reworked_font", "volume_mean_catego
 
 ([data table](https://github.com/danielkupka/2020-google-searches/blob/master/proc_data/categories_averages.csv))
 
-
 Arts & Entertainment, Internet & Telecom, and News, Media & Publications have the highest total volume.
 
 ```{r volume_total_category_ordered, echo=FALSE}
@@ -254,7 +233,6 @@ knitr::include_graphics(here::here("plots", "reworked_font","volume_total_catego
 
 Finance has the highest mean cost per click.
 
-
 ```{r search_category_cpc_ordered, echo=FALSE}
 knitr::include_graphics(here::here("plots", "reworked_font", "cpc_mean_category_ordered.png"))
 ```
@@ -263,9 +241,7 @@ knitr::include_graphics(here::here("plots", "reworked_font", "cpc_mean_category_
 
 The average CPC for all searches is 0.61
 
-
-<br>
-<br>
+<br> <br>
 
 ## 3.8 Keyword difficulty
 
@@ -273,24 +249,21 @@ Description of keyword difficulty from *ahref*:
 
 > Keyword Difficulty (KD) effectively tells you the average height (backlink profile strength) of the other players in the game (top-ranking pages). The higher the number, the more height (backlinks) you'll likely to need to stand a chance of ranking.
 
-
 As volume increases, the difficulty increases.
 
 ```{r difficulty_volume_sample, echo=FALSE}
 knitr::include_graphics(here::here("plots", "reworked_font", "volume_difficulty.png"))
 ```
 
-The slope of the linear regression line is such that for each doubling of the volume, the difficulty increases by 1.63. For example, as the volume goes from 100 to 3200 (6 doublings), the difficulty increases by roughly 1.63 * 6 ~= 10. 
- 
+The slope of the linear regression line is such that for each doubling of the volume, the difficulty increases by 1.63. For example, as the volume goes from 100 to 3200 (6 doublings), the difficulty increases by roughly 1.63 \* 6 \~= 10.
+
 <br>
 
 Higher difficulty also means higher CPC on average. Note that the Y axis is logarithmic, so a small move on the y axis is a large increase in value.
 
-
 ```{r difficulty_cpc_scatter, echo=FALSE}
 knitr::include_graphics(here::here("plots", "0911", "difficulty_cpc_scatter.png"))
 ```
-
 
 An alternative visualization of the same data by grouped category in a boxplot:
 
@@ -298,15 +271,11 @@ An alternative visualization of the same data by grouped category in a boxplot:
 knitr::include_graphics(here::here("plots", "reworked_font", "cpc_difficulty_boxplot.png"))
 ```
 
-
-<br>
-<br>
-
-
+<br> <br>
 
 ## 3.9 SERP features
 
-Search Engine Results Pages (SERPs) are the pages that Google and other search engines show in response to a user’s search query.
+Search Engine Results Pages (SERPs) are the pages that Google and other search engines show in response to a user's search query.
 
 97.6% of the SERPs contain at least one SERP feature.
 
@@ -318,15 +287,11 @@ The SERP features shown in the most searches are *Image pack* and *People also a
 knitr::include_graphics(here::here("plots", "reworked_font", "serp_features.png"))
 ```
 
-
-
 The knowledge card has a huge effect in reducing the clicks-per-search, while the other SERP features have limited effect. Searches with the Shopping results SERP feature have higher cps on average.
 
 ```{r serp_cps, echo=FALSE}
 knitr::include_graphics(here::here("plots", "reworked_font", "serp_cps.png"))
 ```
-
-
 
 Easy keywords have fewer SERP features.
 
@@ -340,7 +305,6 @@ Thumbnail & Top stories is the most common SERP feature pairing.
 knitr::include_graphics(here::here("plots", "reworked_font", "serp_pairings.png"))
 ```
 
-
 Searches without SERP features tend to be low volume.
 
 ```{r serp_volume_ridge, echo=FALSE}
@@ -353,17 +317,13 @@ Searches with more SERP features have higher mean difficulty.
 knitr::include_graphics(here::here("plots", "reworked_font", "serp_mean_difficulty.png"))
 ```
 
-
-
-
-<br>
-<br>
+<br> <br>
 
 ## 3.10 Return rate
 
 > Return Rate shows how often the same person searches for a given keyword over a 30-day period. A return rate of 1 means that people typically don't search for that keyword again within 30 days.
 
-We arbitrarily grouped return rate into three groups, No significant return rate (< 2), medium (2-10) and high (10+). Then we look at searches that have similar volume, but different return rate.
+We arbitrarily grouped return rate into three groups, No significant return rate (\< 2), medium (2-10) and high (10+). Then we look at searches that have similar volume, but different return rate.
 
 As the return rate increases, the number of clicks increases and the cost per click increases.
 
@@ -377,11 +337,7 @@ title_description_table <- read.csv(here::here("plots", "csv", "return_rate.csv"
 knitr::kable(title_description_table, caption = "Comparison of searches with same volume but different return rates")
 ```
 
-<br>
-<br>
-
-
-
+<br> <br>
 
 ## 3.11 International searches
 
@@ -392,15 +348,14 @@ Of those, US and UK have the highest search volume per person. Americans use goo
 ```{r countries_volume, echo=FALSE}
 knitr::include_graphics(here::here("plots", "reworked_font", "volume_population.png"))
 ```
-US of course has much higher total search volume overall:
 
+US of course has much higher total search volume overall:
 
 ```{r countries_volume_prop, echo=FALSE}
 knitr::include_graphics(here::here("plots", "1611", "search_volume_vs_us-1.png"))
 ```
 
 US has significantly higher cost per click on average
-
 
 ```{r countries_cpc, echo=FALSE}
 knitr::include_graphics(here::here("plots", "reworked_font", "cpc_countries.png"))
@@ -441,7 +396,6 @@ knitr::include_graphics(here::here("plots", "reworked_font", "volume_region_corr
 knitr::include_graphics(here::here("plots", "reworked_font", "volume_region_corr_hex.png"))
 ```
 
-
 ```{r tbl_int, echo=FALSE}
 title_description_table <- read.csv(here::here("plots", "csv", "table_int.csv"), stringsAsFactors=F)
 knitr::kable(title_description_table, caption = "Searches that have much higher volume internationally")
@@ -451,8 +405,6 @@ knitr::kable(title_description_table, caption = "Searches that have much higher 
 title_description_table <- read.csv(here::here("plots", "csv", "table_us.csv"), stringsAsFactors=F)
 knitr::kable(title_description_table, caption = "Searches that have much higher volume in the US")
 ```
-
-
 
 Searches that have higher volume in US have a higher click-per-search on average than searches that have higher volume internationally.
 
@@ -466,7 +418,6 @@ They also have a higher cost-per-click on average
 knitr::include_graphics(here::here("plots", "reworked_font", "volume_region_cpc_corr.png"))
 ```
 
-
 Searches that have higher volume internationally, tend to have higher difficulty
 
 ```{r international_difficulty, echo=FALSE}
@@ -479,10 +430,7 @@ knitr::include_graphics(here::here("plots", "reworked_font", "volume_region_diff
 
 Many of these are people featured in Google doodles
 
-
 ```{r tbl_spikes, echo=FALSE}
 title_description_table <- vroom::vroom(here::here("plots", "csv", "spikes.csv"))
 knitr::kable(title_description_table, caption = "Searches with highest difference in search volume over time")
 ```
-
-

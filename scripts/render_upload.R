@@ -4,6 +4,6 @@ rmarkdown::render(here::here("rmd", "final.Rmd"))
 usethis::edit_r_environ()
 
 # add study name under Sys.getenv 
-RCurl::ftpUpload(here::here("rmd", "03_final_0911.html"), Sys.getenv("KEYWORD_LANDSCAPE"))
+RCurl::ftpUpload(here::here("rmd", "03_final_1911.html"), Sys.getenv("KEYWORD_LANDSCAPE"))
 
 
