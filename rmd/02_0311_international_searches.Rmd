@@ -520,7 +520,7 @@ countries %>%
                         breaks = 0:6 / 10) +
     theme(panel.grid.minor.x = element_blank(), 
           panel.grid.major.x = element_blank()) +
-    labs(y = "Mean CPC", x = NULL, title = "The US Has Higher CPCs Compared to Other English-Speaking Countries") +
+    labs(y = "Mean CPC", x = NULL, title = "The US Has Higher CPCs Compared to\nOther English-Speaking Countries") +
   ggsave(here::here("plots", "reworked_font", "cpc_countries.pdf"),
          width = 10, height = 6, device = cairo_pdf)
 ```
