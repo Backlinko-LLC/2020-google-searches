@@ -1,5 +1,5 @@
 ---
-title: "Keyword Landscape Analysis"
+title: "We Analyzed 306M Keywords. Here's What We Learned About Google Searches"
 author: 
 - "Lead: Brian Dean ([backlinko.com](https://backlinko.com/))"
 - "Support: FrontPage Data ([frontpagedata.com](https://frontpagedata.com/))"

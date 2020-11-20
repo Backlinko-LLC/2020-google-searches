@@ -6,7 +6,7 @@ This is the Github repository for Backlinko´s study of 306M Keywords.
 
 -   🔨 The study was conducted with the statistical programming language [R](https://www.r-project.org/).
 
--   📊 This [folder](https://github.com/backlinko-llc/2020-google-searches/tree/master/rmd) contains the code for the various data cleaning and analysis steps. A large part of the data analysis was performed in this [file](https://github.com/backlinko-llc/2020-google-searches/blob/master/rmd/03_final_0911.Rmd).
+-   📊 This [folder](https://github.com/backlinko-llc/2020-google-searches/tree/master/rmd) contains the code for the various data cleaning and analysis steps.
 
  
 
