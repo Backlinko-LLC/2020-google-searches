@@ -18,7 +18,7 @@ for(i in required_packages) {
 
 
 ```{r convert_to_pngs, results='asis', echo=FALSE, eval=FALSE, include=FALSE}
-dir_plots <- here::here("plots", "reworked")
+dir_plots <- here::here("plots", "reworked_font")
 
 dpi <- 750
 pdfs <- list.files(dir_plots, pattern = ".*pdf", recursive = TRUE)

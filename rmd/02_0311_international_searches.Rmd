@@ -61,9 +61,8 @@ extrafont::loadfonts(device = "win")
 
 
 ```{r prep}
-set.seed(2)
-
-required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "ggridges", "spatstat", "broom", "arrow", "magicfor", "gapminder")
+set.seed(1)
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords", "magicfor", "gapminder", "ggridges")
 for(i in required_packages) { 
   if(!require(i, character.only = T)) {
     #  if package is not existing, install then load the package
@@ -71,15 +70,12 @@ for(i in required_packages) {
   require(i, character.only = T)
   }
 }
-
 panderOptions('table.alignment.default', "left")
-
 ## quality of png's
 dpi <- 750
-
 ## theme updates; please adjust to client´s website
 #theme_set(ggthemes::theme_clean(base_size = 15))
-theme_set(ggthemes::theme_clean(base_size = 15))
+theme_set(ggthemes::theme_clean(base_size = 15, base_family = "Montserrat"))
 theme_update(plot.margin = margin(30, 30, 30, 30),
              plot.background = element_rect(color = "white",
                                             fill = "white"),
@@ -221,7 +217,7 @@ dfv %>% drop_na(volume) %>%
   scale_fill_manual(values = c("grey70", bl_col), name = NULL) +
   theme(panel.grid.major.x = element_blank(), legend.position = c(.7, .8),
         legend.text = element_text(size = 14, color = "grey40", face = "bold")) +
-  ggsave(here::here("plots", "reworked", "volume_region.pdf"),
+  ggsave(here::here("plots", "reworked_font", "volume_region.pdf"),
          width = 10, height = 6, device = cairo_pdf)
 ```
 There is not a large difference in the number of searches with very high volume. However, the total volume of these searches is a lot higher internationally
@@ -247,7 +243,7 @@ dfv %>% drop_na(volume) %>%
   scale_fill_manual(values = c("grey70", bl_col), name = NULL) +
   theme(panel.grid.major.x = element_blank(), legend.position = c(.2, .5),
         legend.text = element_text(size = 14, color = "grey40", face = "bold")) +
-  ggsave(here::here("plots", "reworked", "volume_region_high.pdf"),
+  ggsave(here::here("plots", "reworked_font", "volume_region_high.pdf"),
          width = 10, height = 6, device = cairo_pdf)
 ```
 
@@ -290,7 +286,7 @@ df_int_s %>%
   theme(legend.title = element_text(size = 10),
         legend.text = element_text(size = 8),
         legend.position = c(.75, .1)) +
-  ggsave(here::here("plots", "reworked", "volume_region_corr_hex.pdf"),
+  ggsave(here::here("plots", "reworked_font", "volume_region_corr_hex.pdf"),
          width = 10, height = 8.5, device = cairo_pdf)
 ```
 
@@ -338,7 +334,7 @@ df_int_s %>%
   geom_smooth(method='lm', formula= y~x, color = bl_col, size = 2) +
   scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
   labs(x = NULL, y = "Cost per sale (CPS)") +
-  ggsave(here::here("plots", "reworked", "volume_region_cps_corr.pdf"),
+  ggsave(here::here("plots", "reworked_font", "volume_region_cps_corr.pdf"),
          width = 10, height = 7, device = cairo_pdf)
 ```
 <br>
@@ -353,7 +349,7 @@ df_int_s %>%
   scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
   scale_y_log10(labels = comma) +
   labs(x = NULL, y = "CPC") +
-  ggsave(here::here("plots", "reworked", "volume_region_cpc_corr.pdf"),
+  ggsave(here::here("plots", "reworked_font", "volume_region_cpc_corr.pdf"),
          width = 10, height = 7, device = cairo_pdf)
 ```
 <br>
@@ -367,7 +363,7 @@ df_int_s %>%
   geom_smooth(method='lm', formula= y~x, color = bl_col, size = 2) +
   scale_x_continuous(breaks = c(-2, 0, 3), labels = c("More US", "0", "More international")) +
   labs(x = NULL, y = "Difficulty") +
-  ggsave(here::here("plots", "reworked", "volume_region_difficulty_corr.pdf"),
+  ggsave(here::here("plots", "reworked_font", "volume_region_difficulty_corr.pdf"),
          width = 10, height = 7, device = cairo_pdf)
 ```
 
@@ -485,7 +481,7 @@ countries
 
 
 
-```{r, countries_volume}
+```{r, countries_volume, eval = F}
 countries %<>% 
     mutate(volume_per_pop = volume / pop)
     #mutate(country = case_when(
@@ -525,6 +521,67 @@ countries %>%
     theme(panel.grid.minor.x = element_blank(), 
           panel.grid.major.x = element_blank()) +
     labs(y = "Mean CPC", x = NULL, title = "The US Has Higher CPCs Compared to Other English-Speaking Countries") +
-  ggsave(here::here("plots", "reworked", "cpc_countries.pdf"),
+  ggsave(here::here("plots", "reworked_font", "cpc_countries.pdf"),
          width = 10, height = 6, device = cairo_pdf)
+```
+
+
+
+```{r, countries_volume}
+countries %>% 
+    mutate(volume_per_pop = volume / pop) %>% 
+    mutate(country = case_when(
+        country == "United Kingdom" ~ "UK",
+        country == "United States" ~ "US",
+        T ~ country
+    )) %>% 
+    ggplot(aes(x = reorder(country, volume_per_pop), y = volume_per_pop)) +
+    geom_bar(stat = "identity", fill = bl_dark, width = 0.85, color = "black") +
+    geom_text(aes(label = format(round(volume_per_pop, 1), scientific = FALSE)),
+            nudge_y = 30, family = "Montserrat", fontface = "bold", color = "grey40") +
+  scale_y_continuous( expand = c(.001, .01), limits = c(0, 1100)) +
+    theme(panel.grid.major.x = element_blank()) +
+    labs(y = "Search volume per person", x = NULL, title = "Americans Search in Google More Than\nAny Other English-Speaking Countries") +
+  ggsave(here::here("plots", "reworked_font", "volume_population.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
+```
+
+
+```{r international_v_us_volume, fig.width = 10, fig.height = 8.5}
+df_int <- df %>% mutate(international_volume = global_volume - volume) %>% 
+  filter(international_volume > 0, global_volume > 0) %>% 
+  mutate(volume_diff = log10(international_volume) - log10(volume))
+
+df_int_s <- df_int %>% sample_n(200000)
+
+df_int_s %>% 
+  ggplot(aes(x = volume, y = international_volume)) +
+  geom_jitter(size = 0.1, alpha = 0.05, height = 0.15, width = 0.15, color = colorspace::desaturate(bl_dark, .3)) +
+  geom_abline(intercept = 0, slope = 1, color = bl_col, size = 1) +
+  scale_x_log10(labels = comma, expand = c(0,0)) +
+  scale_y_log10(labels = comma, expand = c(0,0)) +
+  labs(x = "US volume", y = "International volume") +
+  ggsave(here::here("plots", "reworked_font", "volume_region_corr.pdf"),
+         width = 10, height = 6, device = cairo_pdf)
+
+df_int_s %>% 
+  ggplot(aes(x = volume, y = international_volume)) +
+  geom_hex(color = "white") +
+  geom_abline(intercept = 0, slope = 1, color = bl_col, size = 1) +
+  scale_x_log10(labels = comma, expand = c(.03, .03)) +
+  scale_y_log10(labels = comma, expand = c(.03, .03)) +
+  scale_fill_gradient(low = "grey85", high = bl_dark, 
+                      name = "Number of observations",
+                      breaks = seq(500, 9500, by = 1500)) +
+  guides(fill = guide_colorbar(title.position = "top", 
+                               title.hjust = .5,
+                               direction = "horizontal",
+                               barwidth = unit(16, "lines"),
+                               barheight = unit(.4, "lines"))) +
+  labs(x = "US volume", y = "International volume") +
+  theme(legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        legend.position = c(.75, .1)) +
+  ggsave(here::here("plots", "reworked_font", "volume_region_corr_hex.pdf"),
+         width = 10, height = 8.5, device = cairo_pdf)
 ```

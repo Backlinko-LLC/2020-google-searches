@@ -240,7 +240,7 @@ questions %>% mutate(prop = n / overview$count) %>%
   labs(title = "“How” (8.07%), “What” (3.4%), and “Where” (.88%) Keywords\nAre the Most Common Types of Question Keywords", x = NULL, y = NULL) +
   theme_blank + 
   theme(plot.title = element_text(margin = margin(b = 7))) +
-  ggsave(here::here("plots", "reworked", "questions_count.pdf"),
+  ggsave(here::here("plots", "reworked_font", "questions_count.pdf"),
          width = 10, height = 6, device = cairo_pdf)
 ```
 

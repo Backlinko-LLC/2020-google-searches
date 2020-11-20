@@ -283,7 +283,7 @@ rdff %>% group_by(serp_features) %>%
         panel.grid.major.y = element_blank(), 
         axis.line.y = element_blank()) +
   labs(y = "SERP feature", x = NULL, title = "“People Also Ask” Boxes, Image Packs, and Videos Are\nthe Most Common SERP Features in Google Search") +
-  ggsave(here::here("plots", "reworked", "serp_features.pdf"),
+  ggsave(here::here("plots", "reworked_font", "serp_features.pdf"),
          width = 10, height = 6.5, device = cairo_pdf)
 ```
 
@@ -341,9 +341,9 @@ dff %>%
   coord_cartesian(clip = "off") +
   labs(x = "Clicks per search", y = "SERP feature", title = "SERP features and clicks per search") +
   theme(panel.grid.major.y = element_blank(),
-        panel.grid.minor.x = element_blank())# +
-  #ggsave(here::here("plots", "reworked", "serp_cps.pdf"),
-  #       width = 10, height = 7.5, device = cairo_pdf)
+        panel.grid.minor.x = element_blank()) +
+  ggsave(here::here("plots", "reworked_font", "serp_cps.pdf"),
+         width = 10, height = 7.5, device = cairo_pdf)
 ```
 
 ```{r}
@@ -381,7 +381,7 @@ dff %>%
          "Search Results Without SERP Features Are\nUsually Results for Very Low-Volume Queries") +
   theme(panel.grid.major.y = element_blank(),
         panel.grid.minor.x = element_blank()) +
-  ggsave(here::here("plots", "reworked", "serp_volume.pdf"),
+  ggsave(here::here("plots", "reworked_font", "serp_volume.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
 ```
 
@@ -394,25 +394,25 @@ rdffn %>% mutate(n_serp = as.numeric(n_serp)) %>%
   ggplot(aes(x = difficulty_cat, y = n_serp)) +
   geom_boxplot(color = bl_dark, fill = "grey92", size = .7, width = .7) +
   labs(x = "Difficulty", y = "SERP features", title = "Search Results With SERP Features Are More\nCompetitive vs Those Without SERP Features") +
-  ggsave(here::here("plots", "reworked", "serp_difficulty_box.pdf"),
+  ggsave(here::here("plots", "reworked_font", "serp_difficulty_box.pdf"),
          width = 10, height = 6.5, device = cairo_pdf)
 ```
 
 
 ```{r serp_difficulty_n, fig.width = 10, fig.height = 6.5}
-rdffn %>% mutate(has_serp = ifelse(n_serp == "0", "No", "Yes")) %>% 
-    group_by(has_serp) %>%
+rdffn %>% 
+    group_by(n_serp) %>%
   summarise(difficulty = mean(difficulty, na.rm = T)) %>% 
-  ggplot(aes(x = has_serp, y = difficulty)) +
+  ggplot(aes(x = n_serp, y = difficulty)) +
   geom_bar(stat = "identity", fill = bl_dark, color = "black", width = 0.8) +
   geom_text(aes(label = format(round(difficulty, 1), scientific = FALSE)),
             nudge_y = .7, family = "Montserrat", fontface = "bold", 
             color = "grey40") +
-  labs(x = "Has SERP feature", title = "Google Search Results With SERP Features\nHave Higher Mean Keyword Difficulty", y = "Difficulty") +
+  labs(x = "Number of SERP features", title = "Google Search Results With SERP Features\nHave Higher Mean Keyword Difficulty", y = "Difficulty") +
   coord_cartesian(clip = "off") +
   scale_y_continuous(expand = c(.001, .001), limits = c(0, 21)) +
   theme(panel.grid.major.x = element_blank()) +
-  ggsave(here::here("plots", "reworked", "has_serp_difficulty.pdf"),
+  ggsave(here::here("plots", "reworked_font", "serp_mean_difficulty.pdf"),
          width = 10, height = 6.5, device = cairo_pdf)
 ```
 
@@ -478,7 +478,7 @@ pairs %>%
   theme(panel.grid.minor.x = element_blank(), 
         panel.grid.major.y = element_blank(), 
         axis.line.y = element_blank()) +
-  ggsave(here::here("plots", "reworked", "serp_pairings.pdf"),
+  ggsave(here::here("plots", "reworked_font", "serp_pairings.pdf"),
          width = 10, height = 5.5, device = cairo_pdf)
 ```
 

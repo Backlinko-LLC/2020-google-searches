@@ -57,10 +57,52 @@ extrafont::loadfonts(device = "win")
 ```
 
 
+<style>
+.list-group-item.active, .list-group-item.active:hover, .list-group-item.active:focus {
+  background-color: #00d188;
+  border-color: #00d188;
+}
+
+body {
+  font-family: montserrat;
+  color: #444444;
+  font-size: 14px;
+}
+
+h1 {
+  font-weight: bold;
+  font-size: 28px;
+}
+
+h1.title {
+  font-size: 30px;
+  color: #00d188;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+h3 {
+  font-size: 18px;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F, message = F, fig.path = "../plots/1611/", cache = F, fig.showtext = TRUE, dpi = 700)
+knitr::knit_hooks$set(inline = function(x) {
+  prettyNum(x, big.mark = ",", small.mark = ",", scientific = F)
+})
+Sys.setlocale("LC_TIME", "C")
+extrafont::loadfonts(device = "win")
+```
+
+
 
 ```{r prep}
 set.seed(1)
-required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords", "magicfor", "gapminder", "arrow")
+required_packages <- c("tidyverse", "magrittr", "DBI", "bigrquery", "arrow","glue", "vroom","janitor", "gt", "ggwordcloud", "readxl", "ggthemes", "hrbrthemes", "extrafont", "plotly", "scales", "stringr", "gganimate", "here", "tidytext", "sentimentr", "scales", "DT", "here", "sm", "mblm", "glue", "fs", "knitr", "rmdformats", "janitor", "urltools", "colorspace", "pdftools", "showtext", "pander", "wordcloud2", "stopwords", "magicfor", "gapminder")
 for(i in required_packages) { 
   if(!require(i, character.only = T)) {
     #  if package is not existing, install then load the package
@@ -73,7 +115,7 @@ panderOptions('table.alignment.default', "left")
 dpi <- 750
 ## theme updates; please adjust to client´s website
 #theme_set(ggthemes::theme_clean(base_size = 15))
-theme_set(ggthemes::theme_clean(base_size = 15))
+theme_set(ggthemes::theme_clean(base_size = 15, base_family = "Montserrat"))
 theme_update(plot.margin = margin(30, 30, 30, 30),
              plot.background = element_rect(color = "white",
                                             fill = "white"),
@@ -116,11 +158,11 @@ theme_update(plot.margin = margin(30, 30, 30, 30),
              panel.spacing.x = unit(4, "lines"),
              panel.spacing.y = unit(2, "lines"),
              legend.position = "top",
-             legend.title = element_text(,
+             legend.title = element_text(family = "Montserrat",
                                          color = "black",
                                          size = 14,
                                          margin = margin(5, 0, 5, 0)),
-             legend.text = element_text(
+             legend.text = element_text(family = "Montserrat",
                                         color = "black",
                                         size = 11,
                                         margin = margin(4.5, 4.5, 4.5, 4.5)),
@@ -151,7 +193,6 @@ num_format <- scales::format_format(big.mark = ",", small.mark = ",", scientific
 bl_col <- "#00d188"
 bl_dark <- darken(bl_col, .3, space = "HLS")
 ```
-
 
 
 ```{r, render = pander}
@@ -229,7 +270,7 @@ n_orig_prop %>%
   theme(panel.grid.major.x = element_blank()) +
   labs(x = "Search Volume Category", y = "Percentage of All Search Volume", title = "Long Tails Account For Only 3.3% of Total Search Volume") +
   scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0.001, 0.001))+
-  ggsave(here::here("plots", "reworked", "proportion_search_volume.pdf"),
+  ggsave(here::here("plots", "reworked_font", "proportion_search_volume.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
 ```
 
@@ -243,7 +284,7 @@ n_orig_prop %>%
   theme(panel.grid.major.x = element_blank()) +
   labs(x = "Search Volume Category", y = "Percentage of All Searches", title = "91.8% of Search Terms Are Long Tail Keywords") +
   scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = c(0.001, 0.001))+
-  ggsave(here::here("plots", "reworked", "proportion_searches.pdf"),
+  ggsave(here::here("plots", "reworked_font", "proportion_searches.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
 ```
 
@@ -299,7 +340,7 @@ volume_top %>%
   scale_x_continuous(expand = c(.001, .001), limits = c(0, 10000)) +
   scale_fill_manual(values = c(bl_dark, bl_col, "grey75")) +
   #theme(axis.text.x = element_blank())# +
-  ggsave(here::here("plots", "reworked", "volume_by_searches_dataforseo.pdf"),
+  ggsave(here::here("plots", "reworked_font", "volume_by_searches_dataforseo.pdf"),
          width = 10, height = 6, device = cairo_pdf)
 ```
 
@@ -316,6 +357,6 @@ top100 %>% add_rownames() %>%
     labs(x = "Rank (Top Keywords)", title = "Volume of Top 100 Searches", y = "Volume") +
     scale_y_continuous(labels = c("0%", "0.1%", "0.2%", "0.3%", "0.4%", "0.5%", "0.6%"), limits = c(0, 0.006), expand = c(0,0)) +
     scale_x_continuous(limits = c(1, 100), expand = c(0,0)) +
-    ggsave(here::here("plots", "reworked", "volume_by_searches_ahref.pdf"),
+    ggsave(here::here("plots", "reworked_font", "volume_by_searches_ahref.pdf"),
            width = 10, height = 6, device = cairo_pdf)
 ```

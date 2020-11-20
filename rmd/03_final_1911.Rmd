@@ -139,12 +139,12 @@ If we divide the searches into categories based on how much volume they receive,
 
 
 ```{r number_searches, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "proportion_searches.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "proportion_searches.png"))
 ```
 
 
 ```{r volume_searches, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "proportion_search_volume.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "proportion_search_volume.png"))
 ```
 
 These figures together show that low volume searches (individual searches with volume less than 100), constitute 91.8% of all searches, but only 3.3% of all volume. Or stated in another way, 91.8% of keywords get 1-100 volume a month. Whereas very high volume searches (individual searches with volume above 10,000) constitute only 0.2% of all searches, but have 75.2% of all volume.
@@ -153,14 +153,14 @@ These figures together show that low volume searches (individual searches with v
 The top searches have high volume compared to the rest, and the search volume level quickly levels off. The picture looks slightly different depending on whether we use the values from *DataforSEO*:
 
 ```{r}
-knitr::include_graphics(here::here("plots", "reworked", "volume_by_searches_dataforseo.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_by_searches_dataforseo.png"))
 ```
 
 
 Or *ahref*:
 
 ```{r}
-knitr::include_graphics(here::here("plots", "reworked", "volume_by_searches_ahref.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_by_searches_ahref.png"))
 ```
 
 
@@ -184,7 +184,7 @@ knitr::include_graphics(here::here("plots", "0911", "spell_types.png"))
 14.1% of searches are in the form of a question. "how" is the most common question word.
 
 ```{r questions_count, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "questions_count_b.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "questions_count.png"))
 ```
 
 <br>
@@ -215,7 +215,7 @@ knitr::include_graphics(here::here("plots", "0911", "stopwords_cloud_colors.png"
 The most searched queries have length 5-10 characters, and falls continuously for search queries longer or shorter than that.
 
 ```{r keyword_length, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_keywordlength.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_keywordlength.png"))
 ```
 
 
@@ -223,7 +223,7 @@ The mean keyword length in characters is 11.2, and the median is 8.5.
 
 
 ```{r keyword_words_volume, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_words_searchterm.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_words_searchterm.png"))
 ```
 
 Most searches consist of a single word, with volume quickly falling as the number of words increase.
@@ -238,7 +238,7 @@ Search terms that are 1-3 words in length get ~10x as much volume on average as 
 Internet & Telecom is the keyword category with the highest mean volume.
 
 ```{r volume_mean_category_ordered, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_mean_category_ordered.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_mean_category_ordered.png"))
 ```
 
 ([data table](https://github.com/danielkupka/2020-google-searches/blob/master/proc_data/categories_averages.csv))
@@ -247,7 +247,7 @@ knitr::include_graphics(here::here("plots", "reworked", "volume_mean_category_or
 Arts & Entertainment, Internet & Telecom, and News, Media & Publications have the highest total volume.
 
 ```{r volume_total_category_ordered, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked","volume_total_category_ordered.png"))
+knitr::include_graphics(here::here("plots", "reworked_font","volume_total_category_ordered.png"))
 ```
 
 ([data table](https://github.com/danielkupka/2020-google-searches/blob/master/proc_data/categories_total_volume.csv))
@@ -256,7 +256,7 @@ Finance has the highest mean cost per click.
 
 
 ```{r search_category_cpc_ordered, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "cpc_mean_category_ordered.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "cpc_mean_category_ordered.png"))
 ```
 
 ([data table](https://github.com/danielkupka/2020-google-searches/blob/master/proc_data/categories_cpc.csv))
@@ -277,7 +277,7 @@ Description of keyword difficulty from *ahref*:
 As volume increases, the difficulty increases.
 
 ```{r difficulty_volume_sample, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_difficulty.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_difficulty.png"))
 ```
 
 The slope of the linear regression line is such that for each doubling of the volume, the difficulty increases by 1.63. For example, as the volume goes from 100 to 3200 (6 doublings), the difficulty increases by roughly 1.63 * 6 ~= 10. 
@@ -295,7 +295,7 @@ knitr::include_graphics(here::here("plots", "0911", "difficulty_cpc_scatter.png"
 An alternative visualization of the same data by grouped category in a boxplot:
 
 ```{r difficulty_cpc_boxplot, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "cpc_difficulty_boxplot.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "cpc_difficulty_boxplot.png"))
 ```
 
 
@@ -315,7 +315,7 @@ The figure below gives an overview of how often the different SERP features are 
 The SERP features shown in the most searches are *Image pack* and *People also ask*:
 
 ```{r serp_presence_repr, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "serp_features.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "serp_features.png"))
 ```
 
 
@@ -323,7 +323,7 @@ knitr::include_graphics(here::here("plots", "reworked", "serp_features.png"))
 The knowledge card has a huge effect in reducing the clicks-per-search, while the other SERP features have limited effect. Searches with the Shopping results SERP feature have higher cps on average.
 
 ```{r serp_cps, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "serp_cps.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "serp_cps.png"))
 ```
 
 
@@ -331,26 +331,26 @@ knitr::include_graphics(here::here("plots", "reworked", "serp_cps.png"))
 Easy keywords have fewer SERP features.
 
 ```{r serp_difficulty_boxplot, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "serp_difficulty_box.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "serp_difficulty_box.png"))
 ```
 
 Thumbnail & Top stories is the most common SERP feature pairing.
 
 ```{r serp_pairs, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "serp_pairings.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "serp_pairings.png"))
 ```
 
 
 Searches without SERP features tend to be low volume.
 
 ```{r serp_volume_ridge, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "serp_volume.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "serp_volume.png"))
 ```
 
 Searches with more SERP features have higher mean difficulty.
 
 ```{r serp_difficulty_n, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "serp_mean_difficulty.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "serp_mean_difficulty.png"))
 ```
 
 
@@ -390,7 +390,7 @@ There is search data from 5 English-speaking countries.
 Of those, US and UK have the highest search volume per person. Americans use google 38% more than UK, 108% more than Canada and 90% more than Australia, when adjusted for population.
 
 ```{r countries_volume, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_population.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_population.png"))
 ```
 US of course has much higher total search volume overall:
 
@@ -403,7 +403,7 @@ US has significantly higher cost per click on average
 
 
 ```{r countries_cpc, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "cpc_countries.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "cpc_countries.png"))
 ```
 
 The following is based on analysis with *ahref*.
@@ -420,25 +420,25 @@ knitr::kable(df, caption = "Total search volume")
 Internationally there are more searches with very low volume, while US has more searches with medium volume.
 
 ```{r comparison_count, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_region.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_region.png"))
 ```
 
 There is not a large difference in the number of searches with very high volume. However, the total volume of these searches is a lot higher internationally
 
 ```{r comparison_volume, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_region_high.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_region_high.png"))
 ```
 
 Searches that have high US volume tend to have high international volume, and vice versa. But there are some exceptions.
 
 ```{r international_v_us_volume, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_region_corr.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_region_corr.png"))
 ```
 
 *A version showing data points binned to hex tiles showing counts:*
 
 ```{r international_v_us_volume_hex, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_region_corr_hex.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_region_corr_hex.png"))
 ```
 
 
@@ -457,20 +457,20 @@ knitr::kable(title_description_table, caption = "Searches that have much higher 
 Searches that have higher volume in US have a higher click-per-search on average than searches that have higher volume internationally.
 
 ```{r international_cps, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_region_cps_corr.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_region_cps_corr.png"))
 ```
 
 They also have a higher cost-per-click on average
 
 ```{r international_cpc, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_region_cpc_corr.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_region_cpc_corr.png"))
 ```
 
 
 Searches that have higher volume internationally, tend to have higher difficulty
 
 ```{r international_difficulty, echo=FALSE}
-knitr::include_graphics(here::here("plots", "reworked", "volume_region_difficulty_corr.png"))
+knitr::include_graphics(here::here("plots", "reworked_font", "volume_region_difficulty_corr.png"))
 ```
 
 <br>

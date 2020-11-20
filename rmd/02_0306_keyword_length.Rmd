@@ -223,7 +223,7 @@ kw_length %>% filter(length <= 50) %>%
     scale_y_continuous(labels = scales::label_percent(accuracy = 1), breaks = seq(0, .14, by = .02)) +
     labs(x = "Search term length (in characters)", y = "Total search volume", title = "Keywords Between 5-10 Characters Get Searched For the Most") +
     theme(panel.grid.minor.x = element_blank()) +
-  ggsave(here::here("plots", "reworked", "volume_keywordlength.pdf"),
+  ggsave(here::here("plots", "reworked_font", "volume_keywordlength.pdf"),
          width = 10, height = 6, device = cairo_pdf)
 ```
 
@@ -266,7 +266,7 @@ kw_words %>%
     scale_y_continuous(labels = scales::label_percent(accuracy = 1), breaks = seq(0, .6, by = .1)) +
     labs(x = "Search term length (in words)", y = "Proportion of total search volume", title = "1–2 Word Terms Have The Highest Average Search Volume") +
     theme(panel.grid.minor.x = element_blank()) +
-  ggsave(here::here("plots", "reworked", "volume_words_searchterm.pdf"),
+  ggsave(here::here("plots", "reworked_font", "volume_words_searchterm.pdf"),
          width = 10, height = 6, device = cairo_pdf)
 ```
 
@@ -301,7 +301,7 @@ kw_words %>% mutate(
 
 
 
-```{r keyword_words_count, fig.width = 10, fig.height = 6}
+```{r keyword_words_count, fig.width = 10, fig.height = 6, eval = F}
 kw_words %>% 
     mutate(prop = count / sum(count)) %>% 
     filter(length <= 8) %>% 

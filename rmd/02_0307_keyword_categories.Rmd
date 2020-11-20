@@ -221,7 +221,7 @@ df %>%
       geom_text(aes(label = glue::glue("{format(round(search_volume, 0), scientific = FALSE)}")),
             nudge_y = 10, family = "Montserrat", fontface = "bold", 
             color = "grey40", size = 2.7, hjust = 0) +
-  ggsave(here::here("plots", "reworked", "volume_mean_category_ordered.pdf"),
+  ggsave(here::here("plots", "reworked_font", "volume_mean_category_ordered.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
 ```
 
@@ -271,7 +271,7 @@ df %>%
   theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
   scale_y_continuous(limits = c(0, .21), expand = c(0,0), labels = scales::percent) +
   labs(x = NULL, y = NULL, title = "Industries With the Greatest Total Search\nVolume Include “News, Media & Publications”,\n“Internet & Telecom”, and “Arts & Entertainment”") +
-  ggsave(here::here("plots", "reworked", "volume_total_category_ordered.pdf"),
+  ggsave(here::here("plots", "reworked_font", "volume_total_category_ordered.pdf"),
          width = 10, height = 7.5, device = cairo_pdf)
 ```
 
@@ -314,7 +314,7 @@ df %>%
   theme(panel.grid.major.y = element_blank(), axis.line.y = element_blank()) +
   scale_y_continuous(expand = c(0,0), breaks = seq(0, 2, by = .25)) +
   labs(x = NULL, y = NULL, title = "Finance, Real Estate, and Health Industries Have the Highest CPCs") +
-  ggsave(here::here("plots", "reworked", "cpc_mean_category_ordered.pdf"),
+  ggsave(here::here("plots", "reworked_font", "cpc_mean_category_ordered.pdf"),
          width = 10, height = 7, device = cairo_pdf)
 ```
 
