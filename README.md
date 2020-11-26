@@ -2,7 +2,7 @@
 
 This is the Github repository for Backlinko´s study of 306M Keywords.
 
--   📝 The full data report can be found [here](https://frontpagedata.com/google-searches).
+-   📝 The full data report can be found [here](https://frontpagedata.com/keyword-landscape-analysis).
 
 -   🔨 The study was conducted with the statistical programming language [R](https://www.r-project.org/).
 
